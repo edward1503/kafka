@@ -1,0 +1,140 @@
+[
+  {
+    "id": 1,
+    "topic": "Vai trò producer, broker và consumer",
+    "question": "Trong luồng sự kiện đơn hàng, phát biểu nào mô tả đúng trách nhiệm của các thành phần Kafka?",
+    "options": [
+      "Producer lưu mọi replica; broker cập nhật tồn kho; consumer quản lý metadata cluster.",
+      "Producer phân công consumer; broker chỉ lưu committed offset; consumer ghi mọi partition.",
+      "Producer gửi record; broker lưu và phục vụ dữ liệu; consumer đọc và thực hiện xử lý.",
+      "Producer gửi mọi record qua controller; consumer chỉ được đọc sau khi controller xử lý nghiệp vụ."
+    ],
+    "answer": "C",
+    "explanation": "Producer công bố dữ liệu, broker lưu các replica và phục vụ yêu cầu từ client, còn consumer đọc để xử lý. Controller quản lý metadata của cluster; nó không phải trạm trung chuyển bắt buộc cho mọi lần ghi hoặc thành phần thực hiện nghiệp vụ tồn kho."
+  },
+  {
+    "id": 2,
+    "topic": "Thứ tự và phạm vi offset",
+    "question": "Topic order-events có ba partition. Nhận định nào đúng về thứ tự và offset?",
+    "options": [
+      "Mỗi partition có thứ tự log riêng; offset 7 ở P0 và offset 7 ở P1 là hai vị trí khác nhau.",
+      "Kafka sắp mọi record trong cả topic theo một dãy offset duy nhất.",
+      "Record có timestamp nhỏ hơn luôn hoàn tất xử lý trước, bất kể partition.",
+      "Offset 7 của hai partition luôn chứa cùng một record vì đó là mã định danh toàn cục."
+    ],
+    "answer": "A",
+    "explanation": "Offset được xác định trong từng partition. Kafka duy trì thứ tự của log theo partition, không tạo một thứ tự toàn cục cho topic nhiều partition. Thứ tự hoàn tất xử lý còn phụ thuộc ứng dụng, nhất là khi consumer xử lý song song."
+  },
+  {
+    "id": 3,
+    "topic": "Key và phân vùng",
+    "question": "Producer phân vùng theo key, giữ nguyên số partition, cách serialize key và thuật toán phân vùng. Các sự kiện cùng key o1001 sẽ có đặc điểm nào?",
+    "options": [
+      "Luôn được chia đều sang mọi partition để tăng tốc xử lý một đơn hàng.",
+      "Luôn ở partition 0 vì Kafka chỉ dùng key để lọc dữ liệu khi đọc.",
+      "Tạo một partition mới cho từng sự kiện có cùng key.",
+      "Được đưa vào cùng một partition theo chiến lược phân vùng đã nêu."
+    ],
+    "answer": "D",
+    "explanation": "Trong các điều kiện của câu hỏi, cùng key được ánh xạ về cùng partition. Điều đó hỗ trợ theo dõi vòng đời đơn hàng trong một log. Thay đổi số partition hoặc chiến lược phân vùng có thể làm ánh xạ thay đổi; key cũng không nhất thiết là mã sự kiện duy nhất."
+  },
+  {
+    "id": 4,
+    "topic": "Record không có key",
+    "question": "Với Java producer mặc định ở mốc Kafka 4.1, nên giải thích thế nào khi một batch nhỏ không có key phân bố không đều giữa các partition?",
+    "options": [
+      "Kafka chắc chắn bị lỗi vì mọi ba record phải đi lần lượt qua P0, P1 và P2.",
+      "Producer có cơ chế sticky gắn với batching; không nên giả định round robin cho từng record.",
+      "Record không có key luôn được ghi đồng thời vào mọi partition của topic.",
+      "Consumer group quyết định partition của record ngay trước mỗi lần producer gửi."
+    ],
+    "answer": "B",
+    "explanation": "Java producer mặc định sử dụng cách chọn partition dạng sticky cho record không key, gắn với việc gom batch. Vì vậy, quan sát một lượng nhỏ record không đủ để yêu cầu số lượng bằng nhau ở từng partition. Client khác hoặc partitioner tùy chỉnh có thể có hành vi khác."
+  },
+  {
+    "id": 5,
+    "topic": "Partition và replica",
+    "question": "Một topic có 3 partition và replication factor bằng 3. Cách đếm nào đúng?",
+    "options": [
+      "Có 9 partition logic và 3 replica tổng cộng.",
+      "Có 3 partition logic và 12 replica vì leader không được tính vào replication factor.",
+      "Có 3 partition logic và 9 replica tổng cộng, trong đó có 3 leader.",
+      "Có 1 partition logic và 3 leader cùng nhận ghi cho partition đó."
+    ],
+    "answer": "C",
+    "explanation": "Replication factor tính cả leader. Mỗi partition có một leader và hai follower, nên ba partition có tổng cộng 3 nhân 3 bằng 9 replica. Tạo bản sao không làm tăng số partition logic của topic."
+  },
+  {
+    "id": 6,
+    "topic": "ISR và xác nhận ghi",
+    "question": "Giả sử ELR không bật, replication factor 3, ISR hiện có 3 replica, min.insync.replicas=2 và producer dùng acks=all. Phát biểu nào đúng?",
+    "options": [
+      "Chỉ cần leader ghi xong; acks=all bỏ qua follower khi min.insync.replicas nhỏ hơn 3.",
+      "Ngưỡng 2 kiểm tra ISR tối thiểu; acks=all chờ ISR hiện tại, không chỉ hai replica bất kỳ.",
+      "Lần ghi chỉ thành công sau khi mọi consumer group commit offset của record.",
+      "min.insync.replicas=2 làm Kafka giảm replication factor của topic xuống 2."
+    ],
+    "answer": "B",
+    "explanation": "min.insync.replicas là ngưỡng tối thiểu của ISR để nhận ghi với acks=all trong mô hình đã nêu. Nó không đổi replication factor và không giới hạn việc xác nhận ở đúng hai replica. Với ISR hiện có ba replica, acks=all chờ ISR đó; xác nhận ghi cũng khác với hoàn tất xử lý ở consumer."
+  },
+  {
+    "id": 7,
+    "topic": "Chẩn đoán lag lệch theo partition",
+    "question": "Nhóm quan sát lag theo partition như trong sơ đồ và cần giữ thứ tự cho key có lưu lượng lớn.\n\nBước xử lý đầu tiên hợp lý nhất là gì?",
+    "options": [
+      "Thêm consumer thứ tư để hai consumer cùng sở hữu P1 trong group hiện tại.",
+      "Tăng replication factor để follower chia đôi phần việc đọc P1 của group.",
+      "Đo thời gian xử lý và kiểm tra hệ thống đích của consumer P1; xem lại tải của key nóng trước khi đổi cách phân vùng.",
+      "Đổi toàn bộ key sang giá trị ngẫu nhiên để dàn tải, rồi giữ nguyên giả định thứ tự theo key."
+    ],
+    "answer": "C",
+    "explanation": "Lag tập trung ở P1; cần kiểm tra tốc độ vào, tốc độ xử lý và hệ thống đích của partition này. A nhầm cơ chế phân công của group thông thường. B sao chép log nhưng không chia việc đọc trong group. D có thể dàn tải nhưng bỏ ràng buộc thứ tự theo key.",
+    "diagram": "Figures/case-7.png",
+    "diagramAlt": "Group stock · mỗi consumer phụ trách một partition. P0 → Consumer 0, Lag quanh 20. P1 → Consumer 1, Lag 500 → 8.000. P2 → Consumer 2, Lag quanh 20. Khoảng quan sát 15 phút. Mẫu record cho thấy một key chiếm phần lớn lưu lượng vào P1."
+  },
+  {
+    "id": 8,
+    "topic": "Bố trí consumer group cho hai pipeline",
+    "question": "Nhóm đang thiết kế consumer group cho hai pipeline có yêu cầu như trong sơ đồ.\n\nKiến trúc nào đáp ứng đồng thời việc chia tải và đọc độc lập?",
+    "options": [
+      "Dùng hai instance cùng group `stock`; báo cáo dùng group khác và chọn vị trí replay riêng của báo cáo.",
+      "Đưa cả ba instance vào group `stock`, rồi cho báo cáo chạy từ đầu khi cần.",
+      "Cho từng instance tồn kho một group riêng; dựa vào replication factor để tránh xử lý trùng giữa chúng.",
+      "Tăng số replica và giữ một group chung; mỗi follower tự lưu offset riêng cho từng pipeline."
+    ],
+    "answer": "A",
+    "explanation": "Hai instance tồn kho cùng group để chia partition; báo cáo có group riêng để đọc đủ luồng và quản lý mốc replay riêng. B chia bản ghi giữa cả hai loại tác vụ. C khiến mỗi instance tồn kho đọc luồng độc lập. D nhầm vai trò của replica với committed offset theo group.",
+    "diagram": "Figures/case-8.png",
+    "diagramAlt": "Hai pipeline cùng đọc topic order-events · 6 partition. Tồn kho, Hai instance chia việc, Xử lý mỗi đơn. Báo cáo, Một pipeline đọc toàn bộ, Cần replay dữ liệu còn lưu. Yêu cầu khi replay báo cáo là giữ nguyên tiến độ xử lý của tồn kho."
+  },
+  {
+    "id": 9,
+    "topic": "Chẩn đoán ghi lỗi khi replica tụt lại",
+    "question": "Producer gặp lỗi khi ghi P2. Sơ đồ thể hiện cấu hình topic và trạng thái từng replica.\n\nKết luận và hướng khôi phục nào phù hợp nếu phải giữ chính sách xác nhận hiện tại?",
+    "options": [
+      "P2 vẫn ghi thành công vì replication factor trên cấu hình vẫn là 3; chỉ cần tăng timeout producer.",
+      "P2 không đáp ứng ngưỡng ISR; khôi phục ít nhất một follower và xác nhận ISR trở lại từ 2 thành viên trước khi kỳ vọng lần ghi thành công.",
+      "Cần thêm consumer cho P2 để consumer gửi xác nhận thay follower.",
+      "Hạ `min.insync.replicas` xuống 1; như vậy vẫn giữ nguyên yêu cầu có ít nhất hai replica theo kịp."
+    ],
+    "answer": "B",
+    "explanation": "Leader còn hoạt động chưa đủ: P2 chỉ có một thành viên ISR, dưới ngưỡng 2. B khôi phục replica theo kịp thay vì đổi điều kiện xác nhận. A nhầm số bản sao cấu hình với số replica trong ISR. C nhầm xác nhận ghi với tiến độ đọc. D hạ chính ngưỡng cần giữ.",
+    "diagram": "Figures/case-9.png",
+    "diagramAlt": "Topic payments · RF = 3 · min.insync.replicas = 2 · acks = all · ELR tắt. P2 · Leader, Đang hoạt động, Trong ISR. P2 · Follower A, Mất kết nối, Ngoài ISR. P2 · Follower B, Tụt lại, Ngoài ISR. Các partition khác vẫn ghi được."
+  },
+  {
+    "id": 10,
+    "topic": "Khôi phục sau lỗi giữa ghi dữ liệu và commit offset",
+    "question": "Consumer tồn kho gặp sự cố tại thời điểm trong sơ đồ.\n\nThiết kế nào cho phép phục hồi mà không bỏ sót 42 hoặc trừ kho hai lần cho 41?",
+    "options": [
+      "Khi khởi động lại, luôn seek đến offset 43 vì cả hai record đã được fetch trước khi lỗi.",
+      "Bật producer idempotence rồi tiếp tục trừ kho vô điều kiện cho mọi record được đọc lại.",
+      "Commit offset 43 ngay sau khi poll; nếu trừ kho thất bại thì chờ Kafka tự phát lại.",
+      "Đọc lại từ mốc 41, ghi dấu `event_id` và cập nhật tồn kho trong cùng giao dịch khi xử lý mới; bỏ qua tác động đã ghi nhận rồi commit đến vị trí tiếp theo sau khi xử lý xong."
+    ],
+    "answer": "D",
+    "explanation": "Mốc đã commit vẫn là 41, nên có thể đọc lại cả 41 và 42. D dùng một giao dịch để ràng buộc dấu đã xử lý với cập nhật tồn kho, rồi mới commit tiến độ. A và C có thể bỏ sót 42 vì fetch không đồng nghĩa xử lý xong. B không bảo vệ tác động trong cơ sở dữ liệu ngoài Kafka.",
+    "diagram": "Figures/case-10.png",
+    "diagramAlt": "P1 · xử lý theo thứ tự · committed offset = 41. Fetch, Record 41 và 42. Giao dịch tồn kho, Record 41 đã trừ kho. Tiến trình dừng, 42 chưa xử lý, Chưa commit offset mới. Hai record còn trong Kafka. Mỗi sự kiện có event_id duy nhất. Cơ sở dữ liệu hỗ trợ giao dịch."
+  }
+]

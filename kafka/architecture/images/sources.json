@@ -1,0 +1,160 @@
+[
+  {
+    "file": "kafka-record-routing.png",
+    "title": "Records with keys routed to partitions",
+    "publisher": "Apache Kafka / Apache Software Foundation",
+    "source_page": "https://kafka.apache.org/41/getting-started/introduction/",
+    "asset_url": "https://kafka.apache.org/images/streams-and-tables-p1_p4.png",
+    "content_type": "image/png",
+    "bytes": 747793,
+    "dimensions": [
+      1456,
+      754
+    ],
+    "sha256": "ceaa828dc607905e365484fe434cf37f91261a2da1beb118153cb870bb3da954",
+    "downloaded_at": "2026-11-02T12:53:19.421944+00:00",
+    "modifications": "None; original asset"
+  },
+  {
+    "file": "kafka-partition-log.png",
+    "title": "Anatomy of a partitioned log",
+    "publisher": "Apache Kafka / Apache Software Foundation",
+    "source_page": "https://kafka.apache.org/images/",
+    "asset_url": "https://kafka.apache.org/images/log_anatomy.png",
+    "content_type": "image/png",
+    "bytes": 19579,
+    "dimensions": [
+      416,
+      267
+    ],
+    "sha256": "7f20068147f274a8d3c1f86fbadfad5f9b51f82bbdbbddc52e1b29283af566a5",
+    "downloaded_at": "2026-11-02T12:53:19.433532+00:00",
+    "modifications": "None; original asset"
+  },
+  {
+    "file": "kafka-consumer-offsets.png",
+    "title": "Consumer positions in a log",
+    "publisher": "Apache Kafka / Apache Software Foundation",
+    "source_page": "https://kafka.apache.org/images/",
+    "asset_url": "https://kafka.apache.org/images/log_consumer.png",
+    "content_type": "image/png",
+    "bytes": 139658,
+    "dimensions": [
+      2041,
+      1243
+    ],
+    "sha256": "9c47057af8e7cc4cc5df936dc47c1a7a5bbb2fdd610eac89d629b1a997b7fcaf",
+    "downloaded_at": "2026-11-02T12:53:19.531587+00:00",
+    "modifications": "None; original asset"
+  },
+  {
+    "file": "kafka-consumer-groups.png",
+    "title": "Consumer groups and partition assignment",
+    "publisher": "Apache Kafka / Apache Software Foundation",
+    "source_page": "https://kafka.apache.org/images/",
+    "asset_url": "https://kafka.apache.org/images/consumer-groups.png",
+    "content_type": "image/png",
+    "bytes": 26820,
+    "dimensions": [
+      474,
+      252
+    ],
+    "sha256": "c8797fc8b82313e284ced0b53a1465aed51f8063faef1de56c9446edefca99fa",
+    "downloaded_at": "2026-11-02T12:53:19.611547+00:00",
+    "modifications": "None; original asset"
+  },
+  {
+    "file": "kafka-logo-horizontal.png",
+    "title": "Apache Kafka horizontal logo",
+    "publisher": "Apache Kafka / Apache Software Foundation",
+    "source_page": "https://kafka.apache.org/",
+    "asset_url": "https://kafka.apache.org/logos/kafka_logo--simple.png",
+    "content_type": "image/png",
+    "bytes": 3233,
+    "dimensions": [
+      117,
+      65
+    ],
+    "sha256": "3cfcbb2acf90114ffc5b9287a336487c4872be230e4553bdca7f2a09be6a7d33",
+    "downloaded_at": "2026-11-02T12:54:19.824080+00:00",
+    "modifications": "None; original asset"
+  },
+  {
+    "file": "kafka-architecture-overview.svg",
+    "title": "Kafka architecture overview in Vietnamese",
+    "publisher": "Original educational diagram for this article",
+    "kind": "original_illustration",
+    "references": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://kafka.apache.org/41/operations/kraft/"
+    ],
+    "content_type": "image/svg+xml",
+    "bytes": 4692,
+    "dimensions": [
+      1500,
+      760
+    ],
+    "sha256": "0fa1807c7442ddc91ef1d1d7aeb3f23df91015e621840e5ddbb083bf2932a769",
+    "created_at": "2026-11-02",
+    "generator": "../build-diagrams.mjs",
+    "note": "Conceptual illustration; not a screenshot or a deployed cluster."
+  },
+  {
+    "file": "kafka-architecture-overview.png",
+    "title": "Kafka architecture overview in Vietnamese",
+    "publisher": "Original educational diagram for this article",
+    "kind": "original_illustration",
+    "references": [
+      "https://kafka.apache.org/41/design/design/",
+      "https://kafka.apache.org/41/operations/kraft/"
+    ],
+    "content_type": "image/png",
+    "bytes": 117231,
+    "dimensions": [
+      1500,
+      760
+    ],
+    "sha256": "6ac41e768cf361031a1566b869a0e84a8d51fa57f1b68a7e6c6877be50fb60a7",
+    "created_at": "2026-11-02",
+    "generator": "../build-diagrams.mjs",
+    "note": "Conceptual illustration; not a screenshot or a deployed cluster."
+  },
+  {
+    "file": "kafka-partition-replication.svg",
+    "title": "Partitions and replicas across three brokers in Vietnamese",
+    "publisher": "Original educational diagram for this article",
+    "kind": "original_illustration",
+    "references": [
+      "https://kafka.apache.org/41/design/design/"
+    ],
+    "content_type": "image/svg+xml",
+    "bytes": 4558,
+    "dimensions": [
+      1440,
+      720
+    ],
+    "sha256": "aa4d05d693ffa1e6b8efa93eba58f7a2a72b271c5c3612b1259181a90cf1c0a3",
+    "created_at": "2026-11-02",
+    "generator": "../build-diagrams.mjs",
+    "note": "Conceptual illustration; not a screenshot or a deployed cluster."
+  },
+  {
+    "file": "kafka-partition-replication.png",
+    "title": "Partitions and replicas across three brokers in Vietnamese",
+    "publisher": "Original educational diagram for this article",
+    "kind": "original_illustration",
+    "references": [
+      "https://kafka.apache.org/41/design/design/"
+    ],
+    "content_type": "image/png",
+    "bytes": 110248,
+    "dimensions": [
+      1440,
+      720
+    ],
+    "sha256": "30b4113a842fcda4717842574316ceb489aaa30925dac28cd81a9226e562e8d5",
+    "created_at": "2026-11-02",
+    "generator": "../build-diagrams.mjs",
+    "note": "Conceptual illustration; not a screenshot or a deployed cluster."
+  }
+]

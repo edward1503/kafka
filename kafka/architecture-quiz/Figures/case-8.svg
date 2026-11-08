@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="190" viewBox="0 0 1000 190">
+<rect width="1000" height="190" rx="14" fill="#f2f7f5"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#427265"/></marker></defs>
+<text x="500" y="29" text-anchor="middle" font-family="Segoe UI, Arial" font-size="24" font-weight="700" fill="#173e35">Hai pipeline cùng đọc topic order-events · 6 partition</text>
+<path d="M500 36 V52 H258 V68 M500 52 H742 V68" fill="none" stroke="#427265" stroke-width="2.5" marker-end="url(#arrow)"/>
+<path d="M258 53 V68" stroke="#427265" stroke-width="2.5" marker-end="url(#arrow)"/>
+<rect x="35" y="69" width="445" height="82" rx="10" fill="white" stroke="#619282" stroke-width="2"/>
+<text x="257.5" y="93.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="22" font-weight="700" fill="#173e35">Tồn kho</text>
+<text x="257.5" y="117.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="20" font-weight="400" fill="#173e35">Hai instance chia việc</text>
+<text x="257.5" y="141.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="20" font-weight="400" fill="#173e35">Xử lý mỗi đơn</text>
+<rect x="520" y="69" width="445" height="82" rx="10" fill="white" stroke="#619282" stroke-width="2"/>
+<text x="742.5" y="93.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="22" font-weight="700" fill="#173e35">Báo cáo</text>
+<text x="742.5" y="117.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="20" font-weight="400" fill="#173e35">Một pipeline đọc toàn bộ</text>
+<text x="742.5" y="141.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="20" font-weight="400" fill="#173e35">Cần replay dữ liệu còn lưu</text>
+<text x="500" y="176" text-anchor="middle" font-family="Segoe UI, Arial" font-size="18" font-weight="400" fill="#173e35">Yêu cầu khi replay báo cáo là giữ nguyên tiến độ xử lý của tồn kho.</text>
+</svg>

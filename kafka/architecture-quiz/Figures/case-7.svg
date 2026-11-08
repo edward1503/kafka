@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="190" viewBox="0 0 1000 190">
+<rect width="1000" height="190" rx="14" fill="#f2f7f5"/>
+<defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#427265"/></marker></defs>
+<text x="500" y="29" text-anchor="middle" font-family="Segoe UI, Arial" font-size="24" font-weight="700" fill="#173e35">Group stock · mỗi consumer phụ trách một partition</text>
+<rect x="19" y="48" width="294" height="100" rx="10" fill="white" stroke="#619282" stroke-width="2"/>
+<text x="166.0" y="93.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="22" font-weight="700" fill="#173e35">P0 → Consumer 0</text>
+<text x="166.0" y="117.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="20" font-weight="400" fill="#173e35">Lag quanh 20</text>
+<rect x="353" y="48" width="294" height="100" rx="10" fill="white" stroke="#619282" stroke-width="2"/>
+<text x="500.0" y="93.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="22" font-weight="700" fill="#173e35">P1 → Consumer 1</text>
+<text x="500.0" y="117.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="20" font-weight="400" fill="#173e35">Lag 500 → 8.000</text>
+<rect x="687" y="48" width="294" height="100" rx="10" fill="white" stroke="#619282" stroke-width="2"/>
+<text x="834.0" y="93.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="22" font-weight="700" fill="#173e35">P2 → Consumer 2</text>
+<text x="834.0" y="117.0" text-anchor="middle" font-family="Segoe UI, Arial" font-size="20" font-weight="400" fill="#173e35">Lag quanh 20</text>
+<text x="500" y="176" text-anchor="middle" font-family="Segoe UI, Arial" font-size="18" font-weight="400" fill="#173e35">Khoảng quan sát 15 phút. Mẫu record cho thấy một key chiếm phần lớn lưu lượng vào P1.</text>
+</svg>
