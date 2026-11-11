@@ -31,7 +31,7 @@ Toàn bộ lab, kể cả phần mở rộng, đã chạy end-to-end ngày 10/11
 
 ## Chỉnh sửa và dựng lại
 
-- **Lý thuyết:** chỉnh `kafka-architecture.md` rồi chạy `node kafka/architecture/build-from-markdown.mjs` để tạo lại `content.tex`.
+- **Lý thuyết:** bản chuẩn là `architecture/content.tex` theo bản sửa của Thachyyy (commit `64b9663` “Correct format”: trích dẫn `\cite` với danh mục tài liệu, mục định nghĩa sơ lược topic/partition/replica). Sửa trực tiếp `content.tex`. File `kafka-architecture.md` chưa có các thay đổi này, nên `build-from-markdown.mjs` sẽ từ chối ghi đè `content.tex`; chỉ dùng `--force` khi đã đưa các sửa đổi đó vào Markdown.
 - **Lab:** chỉnh `kafka-architecture-hands-on.md` rồi chạy `node kafka/architecture-lab/build-from-markdown.mjs`. Khối lệnh dùng fence `powershell`, khối kết quả dùng fence `text`; nội dung trong khối code phải là ASCII vì `listings` không dựng được tiếng Việt có dấu (script sẽ báo lỗi).
 - **Slide:** nội dung, vị trí và ghi chú của từng slide nằm trong `architecture-slides/build_deck.py`. Script nhân bản ba slide mẫu của template nên logo, thanh tiêu đề, số trang và font Times New Roman giữ đúng như template. Chạy `python kafka/architecture-slides/build_deck.py` với một Python có `python-pptx`; kết quả ghi vào `output/kafka-architecture-slides.pptx`. Nếu sửa trực tiếp trong PowerPoint thì lần chạy script sau sẽ ghi đè, nên chỉ chọn một nơi để chỉnh. Trên trang bìa, nút Data&Code vẫn trỏ tới đường dẫn có sẵn trong template và dòng tác giả đang là “AI VIET NAM – AIO2026”; cần thay bằng thông tin của buổi học.
 - **Câu hỏi và lời giải:** chỉnh `architecture-quiz/quiz-data.json` rồi chạy `node kafka/architecture-quiz/build-quiz.mjs`; script đồng bộ cả Markdown và TeX.

@@ -111,5 +111,12 @@ for (const [index, t] of tokens.entries()) {
   throw new Error('Unsupported block: ' + t.type);
 }
 if (pending || figures !== 6 || tables !== 8) throw new Error(`Unexpected figures/tables: ${figures}/${tables}`);
-fs.writeFileSync(path.join(project, 'content.tex'), out.join('\n\n')+'\n', 'utf8');
+// content.tex has been edited by hand (citations, thebibliography, extra subsection) and is now the
+// canonical source. Regenerating from Markdown would drop those edits, so refuse unless forced.
+const target = path.join(project, 'content.tex');
+if (fs.existsSync(target) && fs.readFileSync(target, 'utf8').includes('\\begin{thebibliography}') && !process.argv.includes('--force')) {
+  console.error('content.tex contains hand edits (thebibliography). Edit content.tex directly, or pass --force to overwrite it from Markdown.');
+  process.exit(1);
+}
+fs.writeFileSync(target, out.join('\n\n')+'\n', 'utf8');
 console.log(`Kafka theory: ${figures} figures, ${tables} tables; image assets copied.`);
