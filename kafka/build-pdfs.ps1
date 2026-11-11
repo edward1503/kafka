@@ -16,7 +16,11 @@ foreach ($job in $jobs) {
     try {
         foreach ($pass in 1..$job.Passes) {
             $logPath = Join-Path $buildPath ("compile-pass{0}.txt" -f $pass)
+            # pdflatex/MiKTeX writes warnings to stderr; rely on $LASTEXITCODE instead of treating stderr as fatal.
+            $prevPref = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
             & $compiler '-interaction=nonstopmode' '-halt-on-error' '-file-line-error' "-output-directory=$buildPath" "-jobname=$($job.Name)" 'main.tex' *> $logPath
+            $ErrorActionPreference = $prevPref
             if ($LASTEXITCODE -ne 0) {
                 Get-Content -LiteralPath $logPath -Tail 35
                 throw "Compilation failed for $($job.Name), pass $pass."

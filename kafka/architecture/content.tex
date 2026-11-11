@@ -5,7 +5,7 @@
 \includegraphics[width=2.6cm]{images/kafka-logo-horizontal.png}
 \end{center}
 
-\begin{center}\scriptsize \emph{Biểu trưng Apache Kafka. Nguồn: \href{https://kafka.apache.org/}{Apache Kafka}; sử dụng hình gốc.}\end{center}
+\begin{center}\scriptsize \emph{Biểu trưng Apache Kafka \cite{kafka-home}.}\end{center}
 
 \begin{center}\large \emph{Từ sự kiện và luồng dữ liệu đến brokers, topics, partitions, replication và offsets}\end{center}
 
@@ -50,7 +50,7 @@ Một cách triển khai là để dịch vụ đơn hàng gọi trực tiếp t
 Một hướng khác là để dịch vụ đơn hàng công bố sự kiện: \textbf{“đơn o1001 đã được tạo”}. Các ứng dụng quan tâm tự đọc sự kiện và xử lý theo trách nhiệm của mình. Ứng dụng tồn kho có thể đọc ngay, còn ứng dụng phân tích có thể đọc chậm hơn hoặc đọc lại dữ liệu để tính lại báo cáo.
 
 
-Kafka hỗ trợ mô hình này bằng cách tiếp nhận, lưu giữ và cho phép nhiều ứng dụng đọc các luồng sự kiện. Việc xử lý đơn hàng, gửi email hay tính doanh thu vẫn do mã ứng dụng thực hiện. Kafka cung cấp cơ chế vận chuyển và lưu trữ luồng dữ liệu ở giữa các ứng dụng. Xem \href{https://kafka.apache.org/41/getting-started/introduction/}{tổng quan Apache Kafka}.
+Kafka hỗ trợ mô hình này bằng cách tiếp nhận, lưu giữ và cho phép nhiều ứng dụng đọc các luồng sự kiện. Việc xử lý đơn hàng, gửi email hay tính doanh thu vẫn do mã ứng dụng thực hiện. Kafka cung cấp cơ chế vận chuyển và lưu trữ luồng dữ liệu ở giữa các ứng dụng \cite{kafka-intro}.
 
 
 Điều cần tìm hiểu tiếp theo là: sự kiện được lưu ở đâu, được chia ra thế nào, có bao nhiêu bản sao và mỗi ứng dụng nhớ vị trí đọc bằng cách nào?
@@ -89,7 +89,7 @@ Kafka hỗ trợ mô hình này bằng cách tiếp nhận, lưu giữ và cho p
 }
 \end{aivncodebox}
 
-Trong Kafka, đơn vị dữ liệu thường được gọi là \textbf{record}; từ \textbf{message} cũng được dùng phổ biến khi trao đổi. Một record có thể mang key, value, timestamp và headers. JSON ở trên là một cách biểu diễn \textbf{value}, không phải định dạng bắt buộc của Kafka. Ứng dụng có thể sử dụng các định dạng khác thông qua serializer tương ứng. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/ProducerRecord.html}{cấu trúc ProducerRecord} và \href{https://kafka.apache.org/41/configuration/producer-configs/}{cấu hình serializer của producer}.
+Trong Kafka, đơn vị dữ liệu thường được gọi là \textbf{record}; từ \textbf{message} cũng được dùng phổ biến khi trao đổi. Một record có thể mang key, value, timestamp và headers. JSON ở trên là một cách biểu diễn \textbf{value}, không phải định dạng bắt buộc của Kafka. Ứng dụng có thể sử dụng các định dạng khác thông qua serializer tương ứng \cite{kafka-producerrecord, kafka-producer-configs}.
 
 
 Trong ví dụ này, ta chọn:
@@ -114,7 +114,7 @@ Trong ví dụ này, ta chọn:
 Topic & \texttt{order-\allowbreak{}events} & Luồng sự kiện liên quan đến đơn hàng \\
 Key & \texttt{o1001} & Gom các sự kiện của cùng đơn hàng theo một khóa \\
 Value & JSON sự kiện ở trên & Nội dung nghiệp vụ \\
-Timestamp & Thời gian của record & Cần phân biệt với trường nghiệp vụ \texttt{occurred\_\allowbreak{}at} trong value \\
+Timestamp & Thời gian của record & Thời điểm record được gửi hoặc ghi vào Kafka. Khác với \texttt{occurred\_\allowbreak{}at} trong value --- thời điểm khách thực sự đặt đơn. Khi gửi trễ hoặc retry, hai giá trị này có thể lệch nhau \\
 \end{longtable}
 \endgroup
 
@@ -128,7 +128,22 @@ Key không nhất thiết là mã sự kiện duy nhất. Sự kiện tạo đơ
 \textbf{Event stream} là một luồng sự kiện tiếp tục được bổ sung theo thời gian. \textbf{Producer} là ứng dụng gửi record vào Kafka. \textbf{Consumer} là ứng dụng đọc record từ Kafka và thực hiện công việc tiếp theo.
 
 
-Trong bài toán cửa hàng, dịch vụ đơn hàng đóng vai producer. Ứng dụng tồn kho và ứng dụng phân tích là các consumer. Một ứng dụng cũng có thể vừa đọc một luồng, xử lý dữ liệu, rồi ghi kết quả sang luồng khác; các vai trò này mô tả hành vi của ứng dụng. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html}{KafkaProducer} và \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html}{KafkaConsumer}.
+Trong bài toán cửa hàng, dịch vụ đơn hàng đóng vai producer. Ứng dụng tồn kho và ứng dụng phân tích là các consumer. Một ứng dụng cũng có thể vừa đọc một luồng, xử lý dữ liệu, rồi ghi kết quả sang luồng khác; các vai trò này mô tả hành vi của ứng dụng \cite{kafka-producer-api, kafka-consumer-api}.
+
+
+\FloatBarrier
+\Needspace{5\baselineskip}
+\subsection{Topic, partition và replica: định nghĩa sơ lược}
+
+Trước khi xem kiến trúc tổng thể, cần nắm sơ lược ba thuật ngữ sẽ xuất hiện thường xuyên trong các phần sau:
+
+\begin{itemize}
+\item \textbf{Topic}: tên logic của một luồng dữ liệu, chẳng hạn \texttt{order-\allowbreak{}events}.
+\item \textbf{Partition}: một phần của topic. Mỗi topic được chia thành một hoặc nhiều partition; mỗi partition là một log có thứ tự, record mới được ghi nối vào cuối.
+\item \textbf{Replica}: một bản sao của partition, được lưu trên các máy chủ Kafka để dữ liệu vẫn còn khi một máy gặp sự cố.
+\end{itemize}
+
+Partition được giải thích chi tiết ở Phần IV, replica ở Phần VI \cite{kafka-intro}.
 
 
 \FloatBarrier
@@ -139,7 +154,7 @@ Trong bài toán cửa hàng, dịch vụ đơn hàng đóng vai producer. Ứng
 \centering
 \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{images/kafka-architecture-overview.png}
 \begin{figurecardcaptionaivn}
-\capfig{Luồng record từ dịch vụ đơn hàng đến hai nhóm ứng dụng. Sơ đồ tiếng Việt biên soạn cho bài học, dựa trên \href{https://kafka.apache.org/41/design/design/}{kiến trúc Kafka} và \href{https://kafka.apache.org/41/operations/kraft/}{vai trò KRaft}. Mũi tên xanh biểu diễn hướng dữ liệu; consumer chủ động gửi yêu cầu fetch.}
+\capfig{Luồng record từ dịch vụ đơn hàng đến hai nhóm ứng dụng \cite{kafka-design, kafka-kraft}.}
 \end{figurecardcaptionaivn}
 \end{figure}
 
@@ -150,7 +165,7 @@ Trong bài toán cửa hàng, dịch vụ đơn hàng đóng vai producer. Ứng
 \textbf{Broker} là tiến trình máy chủ Kafka tiếp nhận yêu cầu từ client, lưu các replica của partition và phục vụ việc đọc, ghi dữ liệu. \textbf{Cluster} là tập hợp các máy chủ phối hợp để cung cấp dịch vụ Kafka.
 
 
-Một broker có thể giữ dữ liệu của nhiều partition thuộc nhiều topic. Ngược lại, các partition của một topic có thể được phân bố trên nhiều broker. Vì vậy, topic là cách tổ chức dữ liệu ở mức logic; broker là nơi các replica được lưu và phục vụ. Xem \href{https://kafka.apache.org/41/implementation/log/}{thiết kế lưu trữ log} và \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{quản lý topic}.
+Một broker có thể giữ dữ liệu của nhiều partition thuộc nhiều topic. Ngược lại, các partition của một topic có thể được phân bố trên nhiều broker. Vì vậy, topic là cách tổ chức dữ liệu ở mức logic; broker là nơi các replica được lưu và phục vụ \cite{kafka-log, kafka-basic-ops}.
 
 
 \FloatBarrier
@@ -160,7 +175,7 @@ Một broker có thể giữ dữ liệu của nhiều partition thuộc nhiều
 Kafka 4.x sử dụng \textbf{KRaft} để quản lý metadata của cluster. Controller quorum quản lý những thông tin như thành viên cluster và vai trò leader của các partition. Broker đảm nhiệm luồng phục vụ dữ liệu cho client.
 
 
-Một tiến trình có thể được cấu hình mang vai trò broker, controller hoặc cả hai; sơ đồ tách chúng để người đọc dễ hiểu trách nhiệm. Controller không phải trạm trung chuyển mà mọi message đều phải đi qua trước khi được ghi. Xem \href{https://kafka.apache.org/41/operations/kraft/}{tài liệu KRaft}.
+Một tiến trình có thể được cấu hình mang vai trò broker, controller hoặc cả hai; sơ đồ tách chúng để người đọc dễ hiểu trách nhiệm. Controller không phải trạm trung chuyển mà mọi message đều phải đi qua trước khi được ghi \cite{kafka-kraft}.
 
 
 \FloatBarrier
@@ -170,7 +185,7 @@ Một tiến trình có thể được cấu hình mang vai trò broker, control
 Producer lấy thông tin về topic và leader của partition từ cluster. Khi gửi record, producer xác định partition đích, rồi gửi yêu cầu đến broker đang giữ leader của partition đó. Leader ghi record vào log; các follower sao chép dữ liệu theo cơ chế replication.
 
 
-Ở phía đọc, consumer fetch dữ liệu từ các partition được phân công. Trong luồng thông thường được dùng để giải thích ở đây, consumer đọc từ leader; Kafka cũng hỗ trợ những cấu hình đọc từ follower. Xem \href{https://kafka.apache.org/41/design/design/}{thiết kế replication và đọc dữ liệu}.
+Ở phía đọc, consumer fetch dữ liệu từ các partition được phân công. Trong luồng thông thường được dùng để giải thích ở đây, consumer đọc từ leader; Kafka cũng hỗ trợ những cấu hình đọc từ follower \cite{kafka-design}.
 
 
 Không cần thuộc hết kết nối mạng để theo bài. Trước hết, hãy tách rõ ba việc: \textbf{producer gửi}, \textbf{broker lưu và phục vụ}, \textbf{consumer đọc và xử lý}.
@@ -187,7 +202,7 @@ Không cần thuộc hết kết nối mạng để theo bài. Trước hết, h
 \textbf{Topic} là tên logic để các ứng dụng ghi và đọc một loại dữ liệu. Chẳng hạn, \texttt{order-\allowbreak{}events} chứa sự kiện vòng đời đơn hàng; \texttt{payment-\allowbreak{}events} chứa sự kiện thanh toán.
 
 
-Tên topic giúp các ứng dụng thống nhất địa chỉ trao đổi dữ liệu, nhưng chưa mô tả đầy đủ cách lưu trữ bên trong. Một topic được chia thành các \textbf{partition}. Xem \href{https://kafka.apache.org/41/getting-started/introduction/}{topics và partitions}.
+Tên topic giúp các ứng dụng thống nhất địa chỉ trao đổi dữ liệu, nhưng chưa mô tả đầy đủ cách lưu trữ bên trong. Một topic được chia thành các \textbf{partition} \cite{kafka-intro}.
 
 
 \FloatBarrier
@@ -201,7 +216,7 @@ Mỗi partition là một log mà record mới được bổ sung vào cuối. K
 \centering
 \includegraphics[width=9.8cm,height=0.48\textheight,keepaspectratio]{images/kafka-partition-log.png}
 \begin{figurecardcaptionaivn}
-\capfig{Một topic có nhiều partition, mỗi partition có dãy offset riêng. Nguồn: \href{https://kafka.apache.org/images/log_anatomy.png}{Apache Kafka --- hình log\_anatomy.png}; hình gốc.}
+\capfig{Một topic có nhiều partition, mỗi partition có dãy offset riêng \cite{kafka-images}.}
 \end{figurecardcaptionaivn}
 \end{figure}
 
@@ -230,7 +245,7 @@ Ví dụ, cùng một topic có thể chứa các vị trí sau:
 \end{longtable}
 \endgroup
 
-\texttt{P0/\allowbreak{}offset 0} và \texttt{P1/\allowbreak{}offset 0} là hai vị trí khác nhau. Khi mô tả vị trí của một record, cần biết cả \textbf{topic, partition và offset}. Offset không phải mã định danh toàn cục cho mọi message trong Kafka. Xem \href{https://kafka.apache.org/41/implementation/log/}{mô hình log và offset}.
+\texttt{P0/\allowbreak{}offset 0} và \texttt{P1/\allowbreak{}offset 0} là hai vị trí khác nhau. Khi mô tả vị trí của một record, cần biết cả \textbf{topic, partition và offset}. Offset không phải mã định danh toàn cục cho mọi message trong Kafka \cite{kafka-log}.
 
 
 \FloatBarrier
@@ -240,7 +255,7 @@ Ví dụ, cùng một topic có thể chứa các vị trí sau:
 Log của từng partition có một thứ tự. Nếu sự kiện tạo đơn và thanh toán được ghi vào cùng partition, chúng có vị trí trước, sau trong log đó. Nhiều partition tạo ra nhiều dãy thứ tự riêng; Kafka không ghép chúng thành một thứ tự toàn cục duy nhất cho topic.
 
 
-Thứ tự trong log cũng không tự chứng minh thứ tự thời gian nghiệp vụ. Hai producer có thể gửi chậm, thử lại hoặc có đồng hồ khác nhau. Một consumer đọc theo thứ tự nhưng sau đó xử lý song song cũng có thể hoàn tất công việc theo thứ tự khác. Ứng dụng vẫn phải thiết kế cách xử lý phù hợp với yêu cầu nghiệp vụ. Xem \href{https://kafka.apache.org/41/design/design/}{bảo đảm thứ tự của Kafka} và \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html}{lưu ý xử lý đa luồng ở consumer}.
+Thứ tự trong log cũng không tự chứng minh thứ tự thời gian nghiệp vụ. Hai producer có thể gửi chậm, thử lại hoặc có đồng hồ khác nhau. Một consumer đọc theo thứ tự nhưng sau đó xử lý song song cũng có thể hoàn tất công việc theo thứ tự khác. Ứng dụng vẫn phải thiết kế cách xử lý phù hợp với yêu cầu nghiệp vụ \cite{kafka-design, kafka-consumer-api}.
 
 
 \FloatBarrier
@@ -250,7 +265,7 @@ Thứ tự trong log cũng không tự chứng minh thứ tự thời gian nghi�
 Partition cho phép phân bố dữ liệu và công việc đọc trên nhiều broker, nhiều consumer. Tuy nhiên, tăng số partition cũng làm tăng số log, replica và phần việc quản lý. Số partition cần được chọn dựa trên tải và cách xử lý, không chỉ theo mục tiêu “càng nhiều càng nhanh”.
 
 
-Với bài học này, chỉ cần nhớ mối liên hệ: \textbf{partition tạo ra đơn vị lưu trữ có thứ tự và đơn vị phân công công việc cho consumer group thông thường}. Phần 8 sẽ làm rõ giới hạn mở rộng này. Xem \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{quản lý partition}.
+Với bài học này, chỉ cần nhớ mối liên hệ: \textbf{partition tạo ra đơn vị lưu trữ có thứ tự và đơn vị phân công công việc cho consumer group thông thường}. Phần VIII sẽ làm rõ giới hạn mở rộng này \cite{kafka-basic-ops}.
 
 
 \FloatBarrier
@@ -264,14 +279,14 @@ Với bài học này, chỉ cần nhớ mối liên hệ: \textbf{partition t�
 Trong ví dụ cửa hàng, ta muốn theo dõi vòng đời của từng đơn hàng nên chọn \texttt{order\_\allowbreak{}id} làm key. Các sự kiện \texttt{OrderCreated}, \texttt{OrderPaid} và \texttt{OrderCancelled} của \texttt{o1001} dùng cùng key.
 
 
-Với chiến lược phân vùng theo key, khi số partition, cách serialize key và thuật toán phân vùng được giữ nguyên, cùng key sẽ được đưa vào cùng partition. Đây là cơ sở để ứng dụng theo dõi một thực thể trong cùng một log. Xem \href{https://kafka.apache.org/41/getting-started/introduction/}{phân vùng theo key} và \href{https://kafka.apache.org/41/configuration/producer-configs/}{cấu hình partitioner}.
+Với chiến lược phân vùng theo key, khi số partition, cách serialize key và thuật toán phân vùng được giữ nguyên, cùng key sẽ được đưa vào cùng partition. Đây là cơ sở để ứng dụng theo dõi một thực thể trong cùng một log \cite{kafka-intro, kafka-producer-configs}.
 
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{images/kafka-record-routing.png}
 \begin{figurecardcaptionaivn}
-\capfig{Minh họa phân phối record theo key từ hai producer. Nguồn: \href{https://kafka.apache.org/41/getting-started/introduction/}{Apache Kafka --- Introduction}; sử dụng hình gốc. Hình của Apache đặt tên partition P1--P4; các ví dụ trong bài dùng P0--P2.}
+\capfig{Minh họa phân phối record theo key từ hai producer \cite{kafka-intro}.}
 \end{figurecardcaptionaivn}
 \end{figure}
 
@@ -304,7 +319,7 @@ Một giá trị cố định & Mọi record có cùng key & Dễ dồn tải v�
 \Needspace{5\baselineskip}
 \subsection{Không có key có phải là round robin?}
 
-Không nên mặc định rằng record không có key sẽ lần lượt đi P0, P1, P2 rồi lặp lại. Với Java producer mặc định trong mốc tài liệu của bài, record không có key sử dụng cách chọn partition dạng \textbf{sticky}, gắn với việc gom batch. Client khác hoặc partitioner tùy chỉnh có thể có hành vi khác. Xem \href{https://kafka.apache.org/41/configuration/producer-configs/}{mô tả partitioner của producer}.
+Không nên mặc định rằng record không có key sẽ lần lượt đi P0, P1, P2 rồi lặp lại. Với Java producer mặc định trong mốc tài liệu của bài, record không có key sử dụng cách chọn partition dạng \textbf{sticky}, gắn với việc gom batch. Client khác hoặc partitioner tùy chỉnh có thể có hành vi khác \cite{kafka-producer-configs}.
 
 
 Điều này giải thích vì sao khi gửi một lượng nhỏ message, số lượng quan sát được ở các partition có thể không bằng nhau. Cần xem client, key, batching và khoảng thời gian quan sát trước khi kết luận phân phối có vấn đề.
@@ -317,7 +332,7 @@ Không nên mặc định rằng record không có key sẽ lần lượt đi P0
 Nếu một key phát sinh nhiều sự kiện hơn phần còn lại, partition nhận key đó có thể trở thành \textbf{hot partition}: tải tập trung vào một nơi. Thêm consumer chưa chắc giải quyết được, vì một partition vẫn chỉ được giao cho một consumer đang hoạt động trong cùng nhóm thông thường.
 
 
-Ngoài ra, thêm partition có thể làm thay đổi ánh xạ key sang partition. Các record đã ghi không tự được phân bố lại theo ánh xạ mới. Vì vậy, khi ứng dụng phụ thuộc vào thứ tự theo key, cần đánh giá tác động trước khi tăng partition. Xem \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{lưu ý khi tăng số partition}.
+Ngoài ra, thêm partition có thể làm thay đổi ánh xạ key sang partition. Các record đã ghi không tự được phân bố lại theo ánh xạ mới. Vì vậy, khi ứng dụng phụ thuộc vào thứ tự theo key, cần đánh giá tác động trước khi tăng partition \cite{kafka-basic-ops}.
 
 
 \FloatBarrier
@@ -331,14 +346,16 @@ Ngoài ra, thêm partition có thể làm thay đổi ánh xạ key sang partiti
 \textbf{Partition} là một phần của topic. \textbf{Replica} là một bản sao của partition đó. \textbf{Replication factor} là số replica của mỗi partition, tính cả leader.
 
 
+\begin{examplebox}{Ví dụ minh họa}
 Nếu \texttt{order-\allowbreak{}events} có 3 partition và replication factor bằng 3 thì có tổng cộng \textbf{9 replica}. Hệ thống vẫn có 3 partition logic; nó không trở thành topic có 9 partition.
+\end{examplebox}
 
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{images/kafka-partition-replication.png}
 \begin{figurecardcaptionaivn}
-\capfig{Minh họa 3 partition, replication factor 3, tương ứng 9 replica. Sơ đồ tiếng Việt biên soạn cho bài học theo \href{https://kafka.apache.org/41/design/design/}{mô hình replication của Kafka}.}
+\capfig{Minh họa 3 partition, replication factor 3, tương ứng 9 replica \cite{kafka-design}.}
 \end{figurecardcaptionaivn}
 \end{figure}
 
@@ -349,7 +366,7 @@ Mỗi partition có một \textbf{leader} và các \textbf{follower}. Leader ph�
 \Needspace{5\baselineskip}
 \subsection{ISR là gì?}
 
-\textbf{ISR --- in-sync replicas} là tập các replica đang theo kịp leader theo tiêu chí của Kafka. Một replica còn chạy nhưng bị tụt lại vẫn có thể bị loại khỏi ISR. Vì vậy, “broker còn online” và “replica đang thuộc ISR” là hai thông tin khác nhau. Xem \href{https://kafka.apache.org/41/design/design/}{replication và ISR}.
+\textbf{ISR --- in-sync replicas} là tập các replica đang theo kịp leader theo tiêu chí của Kafka. Một replica còn chạy nhưng bị tụt lại vẫn có thể bị loại khỏi ISR. Vì vậy, “broker còn online” và “replica đang thuộc ISR” là hai thông tin khác nhau \cite{kafka-design}.
 
 
 Replication giúp hệ thống có bản sao để tiếp tục phục vụ khi xảy ra lỗi. Tuy nhiên, chỉ nhìn replication factor chưa đủ để kết luận mọi lần ghi đều an toàn hoặc cluster luôn tiếp tục nhận ghi. Cần xét cả trạng thái replica, chính sách xác nhận và điều kiện bầu leader.
@@ -357,7 +374,7 @@ Replication giúp hệ thống có bản sao để tiếp tục phục vụ khi 
 
 \FloatBarrier
 \Needspace{5\baselineskip}
-\subsection{`acks` và `min.insync.replicas`}
+\subsection{\texorpdfstring{\texttt{acks} và \texttt{min.insync.replicas}}{acks và min.insync.replicas}}
 
 Producer cần biết khi nào một lần gửi được coi là đã được broker xác nhận. Cấu hình \textbf{\texttt{acks}} điều khiển điều kiện chờ xác nhận ở phía producer:
 
@@ -384,17 +401,19 @@ Producer cần biết khi nào một lần gửi được coi là đã được 
 \end{longtable}
 \endgroup
 
-Xem \href{https://kafka.apache.org/41/configuration/producer-configs/}{cấu hình \texttt{acks}}. Việc producer nhận xác nhận không đồng nghĩa consumer đã xử lý xong nghiệp vụ.
+Việc producer nhận xác nhận không đồng nghĩa consumer đã xử lý xong nghiệp vụ \cite{kafka-producer-configs}.
 
 
-\textbf{\texttt{min.\allowbreak{}insync.\allowbreak{}replicas}} đặt ngưỡng ISR tối thiểu để chấp nhận ghi khi producer dùng \texttt{acks=\allowbreak{}all}. Đây không phải số replica được tạo ra, cũng không có nghĩa \texttt{acks=\allowbreak{}all} chỉ chờ đúng số replica bằng ngưỡng đó. Xem \href{https://kafka.apache.org/41/configuration/topic-configs/}{cấu hình topic về ISR}.
+\textbf{\texttt{min.\allowbreak{}insync.\allowbreak{}replicas}} đặt ngưỡng ISR tối thiểu để chấp nhận ghi khi producer dùng \texttt{acks=\allowbreak{}all}. Đây không phải số replica được tạo ra, cũng không có nghĩa \texttt{acks=\allowbreak{}all} chỉ chờ đúng số replica bằng ngưỡng đó \cite{kafka-topic-configs}.
 
 
-Ví dụ, với replication factor 3, \texttt{min.\allowbreak{}insync.\allowbreak{}replicas=\allowbreak{}2} và \texttt{acks=\allowbreak{}all}: khi ISR còn hai replica, partition có thể tiếp tục nhận ghi theo các điều kiện này; khi ISR chỉ còn một, lần ghi không đáp ứng ngưỡng tối thiểu. Nếu ISR có ba replica, \texttt{acks=\allowbreak{}all} chờ ISR đó, không chỉ chờ hai replica bất kỳ.
+\begin{examplebox}{Ví dụ minh họa}
+Với replication factor 3, \texttt{min.\allowbreak{}insync.\allowbreak{}replicas=\allowbreak{}2} và \texttt{acks=\allowbreak{}all}: khi ISR còn hai replica, partition có thể tiếp tục nhận ghi theo các điều kiện này; khi ISR chỉ còn một, lần ghi không đáp ứng ngưỡng tối thiểu. Nếu ISR có ba replica, \texttt{acks=\allowbreak{}all} chờ ISR đó, không chỉ chờ hai replica bất kỳ.
+\end{examplebox}
 
 
 \begin{notebox}
-Ví dụ trên dùng mô hình ISR thông thường với \textbf{Eligible Leader Replicas (ELR) không được bật}. Tài liệu Kafka lưu ý rằng bật ELR làm thay đổi một số ngữ nghĩa liên quan đến \texttt{min.\allowbreak{}insync.\allowbreak{}replicas}; cấu hình vận hành thực tế cần được đọc cùng phiên bản đang dùng. Xem \href{https://kafka.apache.org/41/configuration/topic-configs/}{ghi chú ELR trong cấu hình topic}.
+Ví dụ trên dùng mô hình ISR thông thường với \textbf{Eligible Leader Replicas (ELR) không được bật}. Tài liệu Kafka lưu ý rằng bật ELR làm thay đổi một số ngữ nghĩa liên quan đến \texttt{min.\allowbreak{}insync.\allowbreak{}replicas}; cấu hình vận hành thực tế cần được đọc cùng phiên bản đang dùng \cite{kafka-topic-configs}.
 \end{notebox}
 
 \FloatBarrier
@@ -412,11 +431,11 @@ Offset giúp consumer xác định vị trí cần đọc. Hai consumer độc l
 \centering
 \includegraphics[width=\linewidth,height=0.48\textheight,keepaspectratio]{images/kafka-consumer-offsets.png}
 \begin{figurecardcaptionaivn}
-\capfig{Các bên đọc có thể tiến đến những vị trí khác nhau trong log. Nguồn: \href{https://kafka.apache.org/images/log_consumer.png}{Apache Kafka --- hình log\_consumer.png}; hình gốc. Trong ngữ cảnh bài này, A và B là các bên đọc độc lập, chẳng hạn thuộc hai group khác nhau; hình không mô tả hai consumer cùng sở hữu một partition trong một group thông thường.}
+\capfig{Các bên đọc có thể tiến đến những vị trí khác nhau trong log \cite{kafka-images}.}
 \end{figurecardcaptionaivn}
 \end{figure}
 
-Không nên coi mọi khoảng cách giữa hai offset là số lượng record chắc chắn tồn tại. Log có thể có khoảng trống offset, chẳng hạn do compaction. Offset vẫn giữ vai trò địa chỉ trong partition. Xem \href{https://kafka.apache.org/41/design/design/}{log compaction}.
+Không nên coi mọi khoảng cách giữa hai offset là số lượng record chắc chắn tồn tại. Log có thể có khoảng trống offset, chẳng hạn do compaction. Offset vẫn giữ vai trò địa chỉ trong partition \cite{kafka-design}.
 
 
 \FloatBarrier
@@ -447,52 +466,58 @@ Trong \texttt{KafkaConsumer}, cần phân biệt hai loại vị trí:
 \end{longtable}
 \endgroup
 
-Committed offset biểu diễn \textbf{vị trí tiếp theo cần đọc}, không phải offset cuối cùng đã xử lý. Nếu ứng dụng đã xử lý thành công các record có offset 0 đến 4, mốc commit phù hợp cho phần việc đó là \textbf{5}. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html}{Offsets and Consumer Position}.
+Committed offset biểu diễn \textbf{vị trí tiếp theo cần đọc}, không phải offset cuối cùng đã xử lý. Nếu ứng dụng đã xử lý thành công các record có offset 0 đến 4, mốc commit phù hợp cho phần việc đó là \textbf{5} \cite{kafka-consumer-api}.
 
 
+\begin{examplebox}{Ví dụ minh họa}
 Giả sử consumer đã nhận một batch có các offset 5, 6 và 7. Position có thể đã tiến đến 8 trong khi committed offset vẫn là 5. Nếu ứng dụng dừng lúc này, mốc đã commit để khôi phục vẫn là 5, với điều kiện vị trí đó còn hợp lệ và được giữ lại.
+\end{examplebox}
 
 
-Điểm quan trọng là \textbf{nhận record chưa đồng nghĩa xử lý thành công}. Ứng dụng có thể đã fetch dữ liệu nhưng chưa cập nhật xong tồn kho. Cách commit phải phù hợp với thời điểm hoàn thành công việc; bật auto commit không tự biến thao tác fetch thành xác nhận hoàn tất nghiệp vụ. Xem \href{https://kafka.apache.org/41/configuration/consumer-configs/}{cấu hình auto commit}.
+Điểm quan trọng là \textbf{nhận record chưa đồng nghĩa xử lý thành công}. Ứng dụng có thể đã fetch dữ liệu nhưng chưa cập nhật xong tồn kho. Cách commit phải phù hợp với thời điểm hoàn thành công việc; bật auto commit không tự biến thao tác fetch thành xác nhận hoàn tất nghiệp vụ \cite{kafka-consumer-configs}.
 
 
 \FloatBarrier
 \Needspace{5\baselineskip}
 \subsection{Vì sao có thể xử lý trùng?}
 
+\begin{examplebox}{Ví dụ minh họa}
 Giả sử consumer đã trừ tồn kho cho record ở offset 7, sau đó bị lỗi trước khi commit offset 8. Khi khởi động lại từ mốc cũ, consumer có thể đọc lại record đó. Nếu thao tác trừ tồn kho được thực hiện lần nữa, nghiệp vụ bị áp dụng hai lần.
+\end{examplebox}
 
 
-Đây là lý do ứng dụng cần cân nhắc \textbf{idempotency}: xử lý lại cùng một sự kiện không làm lặp tác động đã hoàn tất. Trong ví dụ, ứng dụng có thể dùng \texttt{event\_\allowbreak{}id} để nhận diện sự kiện đã xử lý; thiết kế lưu trữ và giao dịch vẫn phải bảo đảm việc kiểm tra đó phù hợp với hệ thống đích. Xem \href{https://kafka.apache.org/41/design/design/}{ngữ nghĩa xử lý và giao nhận}.
+Đây là lý do ứng dụng cần cân nhắc \textbf{idempotency}: xử lý lại cùng một sự kiện không làm lặp tác động đã hoàn tất. Trong ví dụ, ứng dụng có thể dùng \texttt{event\_\allowbreak{}id} để nhận diện sự kiện đã xử lý; thiết kế lưu trữ và giao dịch vẫn phải bảo đảm việc kiểm tra đó phù hợp với hệ thống đích \cite{kafka-design}.
 
 
-Producer idempotence xử lý một phạm vi khác: tránh các bản ghi trùng do cơ chế gửi lại của producer trong các điều kiện được Kafka hỗ trợ. Nó không tự làm cho thao tác trừ tồn kho hoặc gửi email ở hệ thống bên ngoài trở thành exactly-once. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html}{idempotence và transaction ở producer}.
+Producer idempotence xử lý một phạm vi khác: tránh các bản ghi trùng do cơ chế gửi lại của producer trong các điều kiện được Kafka hỗ trợ. Nó không tự làm cho thao tác trừ tồn kho hoặc gửi email ở hệ thống bên ngoài trở thành exactly-once \cite{kafka-producer-api}.
 
 
 \FloatBarrier
 \Needspace{5\baselineskip}
 \subsection{Consumer lag nói lên điều gì?}
 
-Consumer lag biểu diễn mức chênh lệch giữa tiến độ của consumer và dữ liệu trong partition. Trong báo cáo consumer group thông thường, có thể bắt gặp các cột \texttt{CURRENT-\allowbreak{}OFFSET}, \texttt{LOG-\allowbreak{}END-\allowbreak{}OFFSET} và \texttt{LAG}. Xem \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{theo dõi consumer group}.
+Consumer lag biểu diễn mức chênh lệch giữa tiến độ của consumer và dữ liệu trong partition. Trong báo cáo consumer group thông thường, có thể bắt gặp các cột \texttt{CURRENT-\allowbreak{}OFFSET}, \texttt{LOG-\allowbreak{}END-\allowbreak{}OFFSET} và \texttt{LAG} \cite{kafka-basic-ops}.
 
 
-Ví dụ, log-end offset là 120 còn committed offset của group là 100 thì chênh lệch là 20 đơn vị offset. Con số này không có nghĩa consumer chậm 20 giây, và cũng không tự chứng minh còn đúng 20 công việc nghiệp vụ chưa hoàn tất.
+\begin{examplebox}{Ví dụ minh họa}
+Log-end offset là 120 còn committed offset của group là 100 thì chênh lệch là 20 đơn vị offset. Con số này không có nghĩa consumer chậm 20 giây, và cũng không tự chứng minh còn đúng 20 công việc nghiệp vụ chưa hoàn tất.
+\end{examplebox}
 
 
-Lag tăng liên tục có thể gợi ý tốc độ xử lý đang thấp hơn tốc độ phát sinh dữ liệu. Để tìm nguyên nhân, cần xem thêm tốc độ vào, tốc độ đọc, thời gian xử lý và hệ thống đích mà consumer sử dụng. Các chỉ số consumer khác được mô tả trong \href{https://kafka.apache.org/41/operations/monitoring/}{tài liệu monitoring}.
+Lag tăng liên tục có thể gợi ý tốc độ xử lý đang thấp hơn tốc độ phát sinh dữ liệu. Để tìm nguyên nhân, cần xem thêm tốc độ vào, tốc độ đọc, thời gian xử lý và hệ thống đích mà consumer sử dụng. Các chỉ số consumer khác được mô tả trong tài liệu monitoring của Kafka \cite{kafka-monitoring}.
 
 
 \FloatBarrier
 \Needspace{5\baselineskip}
 \subsection{Retention và replay}
 
-Kafka không xóa một record chỉ vì consumer đã đọc hoặc commit nó. Việc giữ dữ liệu do chính sách topic quyết định, chẳng hạn retention theo thời gian, dung lượng hoặc log compaction. Xem \href{https://kafka.apache.org/41/configuration/topic-configs/}{cấu hình retention và cleanup policy}.
+Kafka không xóa một record chỉ vì consumer đã đọc hoặc commit nó. Việc giữ dữ liệu do chính sách topic quyết định, chẳng hạn retention theo thời gian, dung lượng hoặc log compaction \cite{kafka-topic-configs}.
 
 
 \textbf{Replay} là đọc lại dữ liệu từ một vị trí trước đó. Khả năng này hữu ích khi tính lại báo cáo hoặc khôi phục xử lý, nhưng chỉ thực hiện được đối với dữ liệu còn được giữ trong log. Nếu record đã bị dọn, đặt lại offset không làm record xuất hiện trở lại.
 
 
-Nếu không có committed offset hợp lệ, \texttt{auto.\allowbreak{}offset.\allowbreak{}reset} quy định cách consumer chọn vị trí bắt đầu hoặc xử lý tình huống đó. Ví dụ, \texttt{earliest} chọn vị trí sớm nhất còn sẵn có khi cần reset; nó không bắt consumer đọc lại từ đầu trong mọi lần khởi động. Xem \href{https://kafka.apache.org/41/configuration/consumer-configs/}{cấu hình \texttt{auto.\allowbreak{}offset.\allowbreak{}reset}}.
+Nếu không có committed offset hợp lệ, \texttt{auto.\allowbreak{}offset.\allowbreak{}reset} quy định cách consumer chọn vị trí bắt đầu hoặc xử lý tình huống đó. Ví dụ, \texttt{earliest} chọn vị trí sớm nhất còn sẵn có khi cần reset; nó không bắt consumer đọc lại từ đầu trong mọi lần khởi động \cite{kafka-consumer-configs}.
 
 
 \FloatBarrier
@@ -503,14 +528,14 @@ Nếu không có committed offset hợp lệ, \texttt{auto.\allowbreak{}offset.\
 \Needspace{5\baselineskip}
 \subsection{Nhiều consumer cùng thực hiện một công việc}
 
-\textbf{Consumer group} tập hợp các consumer cùng chia sẻ việc đọc một tập partition. Trong mô hình nhóm thông thường của bài, khi việc phân công ổn định, một partition được giao cho một consumer đang hoạt động trong group đó. Một consumer có thể nhận nhiều partition. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html}{consumer groups trong KafkaConsumer}.
+\textbf{Consumer group} tập hợp các consumer cùng chia sẻ việc đọc một tập partition. Trong mô hình nhóm thông thường của bài, khi việc phân công ổn định, một partition được giao cho một consumer đang hoạt động trong group đó. Một consumer có thể nhận nhiều partition \cite{kafka-consumer-api}.
 
 
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=12.5cm,height=0.48\textheight,keepaspectratio]{images/kafka-consumer-groups.png}
 \begin{figurecardcaptionaivn}
-\capfig{Group A chia bốn partition cho hai consumer; group B chia chúng cho bốn consumer. Nguồn: \href{https://kafka.apache.org/images/consumer-groups.png}{Apache Kafka --- hình consumer-groups.png}; hình gốc.}
+\capfig{Group A chia bốn partition cho hai consumer; group B chia chúng cho bốn consumer \cite{kafka-images}.}
 \end{figurecardcaptionaivn}
 \end{figure}
 
@@ -553,14 +578,14 @@ Hệ quả là thêm consumer vượt số partition không tiếp tục tăng s
 Ứng dụng tồn kho và ứng dụng phân tích làm hai công việc khác nhau, nên có thể dùng hai \texttt{group.\allowbreak{}id} riêng. Mỗi group có tiến độ đọc riêng đối với các partition; group phân tích đọc chậm không làm thay đổi committed offset của group tồn kho.
 
 
-Trong mỗi group, các consumer chia nhau công việc. Giữa các group, cùng một record có thể được đọc độc lập để phục vụ nhiều mục đích. Đây là điểm cần nắm khi quyết định cho hai instance vào cùng group hay hai group khác nhau. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html}{mô hình subscription và group}.
+Trong mỗi group, các consumer chia nhau công việc. Giữa các group, cùng một record có thể được đọc độc lập để phục vụ nhiều mục đích. Đây là điểm cần nắm khi quyết định cho hai instance vào cùng group hay hai group khác nhau \cite{kafka-consumer-api}.
 
 
 \FloatBarrier
 \Needspace{5\baselineskip}
 \subsection{Rebalance là gì?}
 
-\textbf{Rebalance} là việc phân công lại partition cho các consumer trong group. Thay đổi thành viên, subscription hoặc số partition có thể dẫn đến việc phân công lại. Ví dụ, khi C2 rời group, các partition nó phụ trách cần được giao cho thành viên còn lại. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/ConsumerRebalanceListener.html}{ConsumerRebalanceListener}.
+\textbf{Rebalance} là việc phân công lại partition cho các consumer trong group. Thay đổi thành viên, subscription hoặc số partition có thể dẫn đến việc phân công lại. Ví dụ, khi C2 rời group, các partition nó phụ trách cần được giao cho thành viên còn lại \cite{kafka-rebalance}.
 
 
 Ứng dụng cần xử lý việc chuyển giao trách nhiệm, nhất là khi còn công việc chưa hoàn tất hoặc offset chưa commit. Không nên dựa vào giả định “C1 luôn đọc P0” để lưu trạng thái nghiệp vụ mà không có cơ chế khôi phục phù hợp.
@@ -604,7 +629,7 @@ Trong bảng dưới, ta \textbf{giả định} record được đưa vào P1 v�
 Ví dụ này làm rõ ba loại tiến độ khác nhau: \textbf{record đã được Kafka xác nhận ghi}, \textbf{consumer đã nhận record} và \textbf{nghiệp vụ đã xử lý xong}. Chúng xảy ra ở các thành phần khác nhau và cần các cơ chế theo dõi khác nhau.
 
 
-Nếu bước 6 chưa xảy ra trước khi consumer dừng, record có thể được đọc lại theo mốc đã commit trước đó. Nếu producer chưa nhận được xác nhận ở bước 4, nó cũng không thể chỉ dựa vào việc thiếu phản hồi để kết luận record chắc chắn chưa được ghi. Thiết kế retry, idempotency và commit là những phần phải phối hợp khi chuyển từ sơ đồ sang hệ thống chạy thực tế. Xem \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html}{KafkaProducer} và \href{https://kafka.apache.org/41/design/design/}{ngữ nghĩa giao nhận}.
+Nếu bước 6 chưa xảy ra trước khi consumer dừng, record có thể được đọc lại theo mốc đã commit trước đó. Nếu producer chưa nhận được xác nhận ở bước 4, nó cũng không thể chỉ dựa vào việc thiếu phản hồi để kết luận record chắc chắn chưa được ghi. Thiết kế retry, idempotency và commit là những phần phải phối hợp khi chuyển từ sơ đồ sang hệ thống chạy thực tế \cite{kafka-producer-api, kafka-design}.
 
 
 \FloatBarrier
@@ -649,29 +674,26 @@ Nắm được các mối liên hệ đó, bạn có thể giải thích vì sao
 
 \FloatBarrier
 \clearpage
-\section*{Tài liệu tham khảo và nguồn hình}
-\addcontentsline{toc}{section}{Tài liệu tham khảo và nguồn hình}
+\section{Tài liệu tham khảo}
 
-Các liên kết dưới đây trỏ đến tài liệu chính thức Apache Kafka. Mốc tài liệu 4.1 được cố định cho bài đọc; khi áp dụng cấu hình thực tế, cần đối chiếu phiên bản broker và client đang sử dụng.
-
-
-\begingroup\small
-\begin{enumerate}
-\item \href{https://kafka.apache.org/41/getting-started/introduction/}{Introduction --- sự kiện, topics và partitions}.
-\item \href{https://kafka.apache.org/41/design/design/}{Design --- replication, log compaction và ngữ nghĩa giao nhận}.
-\item \href{https://kafka.apache.org/41/configuration/producer-configs/}{Producer Configs --- serializers, partitioner, \texttt{acks} và idempotence}.
-\item \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html}{KafkaProducer Java API --- gửi dữ liệu và giới hạn idempotence}.
-\item \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/ProducerRecord.html}{ProducerRecord Java API --- cấu trúc record}.
-\item \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html}{KafkaConsumer Java API --- position, commit và consumer groups}.
-\item \href{https://kafka.apache.org/41/configuration/consumer-configs/}{Consumer Configs --- auto commit và offset reset}.
-\item \href{https://kafka.apache.org/41/configuration/topic-configs/}{Topic Configs --- retention, cleanup policy, ISR và lưu ý ELR}.
-\item \href{https://kafka.apache.org/41/operations/kraft/}{KRaft --- vai trò broker và controller}.
-\item \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{Basic Kafka Operations --- topics, partitions và consumer groups}.
-\item \href{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/ConsumerRebalanceListener.html}{ConsumerRebalanceListener --- các thay đổi dẫn đến rebalance}.
-\item \href{https://kafka.apache.org/41/implementation/log/}{Log --- cấu trúc lưu trữ và offset}.
-\item \href{https://kafka.apache.org/41/operations/monitoring/}{Monitoring --- chỉ số broker và consumer}.
-\end{enumerate}
+% thebibliography tự tạo \section*{\refname}; tắt tiêu đề đó vì đã có \section ở trên.
+\begingroup
+\renewcommand{\section}[2]{}
+\begin{thebibliography}{99}
+\bibitem{kafka-home} Apache Software Foundation, \emph{Apache Kafka}. [Online]. Available: \url{https://kafka.apache.org/}.
+\bibitem{kafka-intro} Apache Software Foundation, ``Introduction'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/getting-started/introduction/}.
+\bibitem{kafka-producerrecord} Apache Software Foundation, ``ProducerRecord'', in \emph{Apache Kafka 4.1 Java API}. [Online]. Available: \url{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/ProducerRecord.html}.
+\bibitem{kafka-producer-configs} Apache Software Foundation, ``Producer Configs'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/configuration/producer-configs/}.
+\bibitem{kafka-producer-api} Apache Software Foundation, ``KafkaProducer'', in \emph{Apache Kafka 4.1 Java API}. [Online]. Available: \url{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html}.
+\bibitem{kafka-consumer-api} Apache Software Foundation, ``KafkaConsumer'', in \emph{Apache Kafka 4.1 Java API}. [Online]. Available: \url{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html}.
+\bibitem{kafka-design} Apache Software Foundation, ``Design'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/design/design/}.
+\bibitem{kafka-kraft} Apache Software Foundation, ``KRaft'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/operations/kraft/}.
+\bibitem{kafka-log} Apache Software Foundation, ``Log'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/implementation/log/}.
+\bibitem{kafka-basic-ops} Apache Software Foundation, ``Basic Kafka Operations'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/operations/basic-kafka-operations/}.
+\bibitem{kafka-images} Apache Software Foundation, \emph{Apache Kafka documentation images}. [Online]. Available: \url{https://kafka.apache.org/images/}.
+\bibitem{kafka-topic-configs} Apache Software Foundation, ``Topic Configs'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/configuration/topic-configs/}.
+\bibitem{kafka-consumer-configs} Apache Software Foundation, ``Consumer Configs'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/configuration/consumer-configs/}.
+\bibitem{kafka-monitoring} Apache Software Foundation, ``Monitoring'', in \emph{Apache Kafka 4.1 Documentation}. [Online]. Available: \url{https://kafka.apache.org/41/operations/monitoring/}.
+\bibitem{kafka-rebalance} Apache Software Foundation, ``ConsumerRebalanceListener'', in \emph{Apache Kafka 4.1 Java API}. [Online]. Available: \url{https://kafka.apache.org/41/javadoc/org/apache/kafka/clients/consumer/ConsumerRebalanceListener.html}.
+\end{thebibliography}
 \endgroup
-
-Logo và bốn hình minh họa của Apache Kafka được tải về, giữ nguyên nội dung và ghi nguồn tại chú thích từng hình. Hai sơ đồ tiếng Việt được biên soạn riêng cho bài, có cả bản SVG và PNG. Thông tin URL gốc, ngày tải, kích thước và SHA-256 được lưu trong sources.json.
-
