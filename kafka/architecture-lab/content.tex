@@ -1,0 +1,760 @@
+% Generated from kafka-architecture-hands-on.md by build-from-markdown.mjs. Edit the Markdown, not this file.
+
+\begin{center}\large \emph{Tạo topic nhiều partition, quan sát phân phối message, consumer group, lag, replay và replication}\end{center}
+
+\textbf{Bài đọc nền tảng:} Kiến trúc Apache Kafka.
+
+
+\begin{infobox}{Mục tiêu buổi lab}
+Sau buổi lab, học viên tự khởi động Kafka bằng Docker, tạo topic có 3 partition và gửi sự kiện có key. Học viên dùng bằng chứng từ công cụ để giải thích bốn điều: cùng key nằm cùng partition, consumer trong một group chia nhau partition, lag đo theo offset, và replay là đặt lại committed offset. Phần mở rộng dùng cluster 3 broker để quan sát leader, ISR và \texttt{acks}.
+\end{infobox}
+
+\textbf{Môi trường:} Windows, PowerShell và Docker Desktop chạy Linux containers. Các lệnh Kafka chạy trong container, nên không cần cài Java hoặc Kafka trực tiếp trên Windows.
+
+
+\begin{notebox}
+\textbf{Trạng thái:} toàn bộ lab, kể cả phần mở rộng, đã được chạy end-to-end ngày 10/11/2026 trên Windows 11, Windows PowerShell 5.1, Docker Engine 29.9.2 và image \texttt{apache/\allowbreak{}kafka:4.\allowbreak{}1.\allowbreak{}2}. Các khối “Kết quả quan sát” là output của lượt chạy đó, đã thay tab bằng khoảng trắng và rút gọn các cột/ID dài. Topic ID, consumer ID và thời gian sẽ khác trên máy của bạn; số record theo partition được giải thích ở từng bước.
+\end{notebox}
+
+\tableofcontents
+\clearpage
+
+\Needspace{10\baselineskip}
+\section{Thiết kế buổi lab}
+
+\Needspace{7\baselineskip}
+\subsection{Thời lượng và liên hệ với bài lý thuyết}
+
+Buổi lab dài \textbf{90 phút}. Phần 2--9 là phần bắt buộc, khoảng 65 phút. Phần 10 là phần mở rộng về replication, khoảng 20 phút; nếu lớp chỉ có 60 phút, có thể giao phần 10 làm bài về nhà.
+
+
+\begingroup\small
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{@{}p{0.07\linewidth}p{0.48\linewidth}p{0.15\linewidth}p{0.2\linewidth}@{}}
+\toprule
+\rowcolor{rowLavender}
+\textbf{Phần} & \textbf{Nội dung} & \textbf{Thời gian} & \textbf{Mục lý thuyết} \\
+\midrule
+\endfirsthead
+\toprule
+\rowcolor{rowLavender}
+\textbf{Phần} & \textbf{Nội dung} & \textbf{Thời gian} & \textbf{Mục lý thuyết} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+2 & Mô hình lab, khởi động Kafka & 10 phút & 3.1, 3.2 \\
+3 & Tạo topic 3 partition & 5 phút & 4.1, 4.2 \\
+4--5 & Gửi 60 record có key, đọc partition/offset & 15 phút & 4.2, 4.3, 5.1 \\
+6--7 & Hai consumer cùng group, một group độc lập & 12 phút & 8.1, 8.2 \\
+8 & Bốn consumer trên ba partition, rebalance & 5 phút & 8.1, 8.3 \\
+9 & Consumer lag, reset offset và replay & 13 phút & 7.2, 7.4, 7.5 \\
+10 & Mở rộng: replication với 3 broker & 20 phút & 6.1, 6.2, 6.3 \\
+11 & Dọn môi trường, nộp bằng chứng & 10 phút & Tổng hợp \\
+\end{longtable}
+\endgroup
+
+\Needspace{7\baselineskip}
+\subsection{Sản phẩm cần nộp}
+
+Mỗi học viên nộp một báo cáo ngắn (1--2 trang) gồm các bằng chứng \textbf{E1--E8} và câu trả lời cho các câu hỏi \textbf{Q1--Q8} ghi ở cuối từng phần. Bằng chứng là ảnh chụp terminal hoặc đoạn output dán vào báo cáo, kèm một câu giải thích.
+
+
+\begingroup\small
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{@{}p{0.15\linewidth}p{0.65\linewidth}p{0.12\linewidth}@{}}
+\toprule
+\rowcolor{rowLavender}
+\textbf{Mã} & \textbf{Bằng chứng} & \textbf{Phần} \\
+\midrule
+\endfirsthead
+\toprule
+\rowcolor{rowLavender}
+\textbf{Mã} & \textbf{Bằng chứng} & \textbf{Phần} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+E1 & \texttt{-\allowbreak{}-\allowbreak{}describe} của topic với đủ 3 partition & 3 \\
+E2 & Bảng đếm record theo partition, tổng 60 & 5 \\
+E3 & Hai record của \texttt{o0001} kèm partition và offset & 5 \\
+E4 & \texttt{-\allowbreak{}-\allowbreak{}members -\allowbreak{}-\allowbreak{}verbose} của group \texttt{lab-\allowbreak{}stock} có hai client & 6 \\
+E5 & Group \texttt{lab-\allowbreak{}analytics-\allowbreak{}01} đọc đủ 62 record & 7 \\
+E6 & Assignment khi có bốn consumer, một consumer có 0 partition & 8 \\
+E7 & Bảng lag khi consumer dừng và bảng sau khi replay & 9 \\
+E8 (mở rộng) & ISR trước/sau khi dừng \texttt{kafka-\allowbreak{}3} và lỗi \texttt{NOT\_\allowbreak{}ENOUGH\_\allowbreak{}REPLICAS} & 10 \\
+\end{longtable}
+\endgroup
+
+\Needspace{7\baselineskip}
+\subsection{Quy ước cửa sổ}
+
+Lab dùng một \textbf{terminal quản trị} và tối đa bốn cửa sổ consumer \textbf{A, B, C, D}. Mọi lệnh không ghi tên cửa sổ đều chạy ở terminal quản trị. Đặt terminal quản trị ở một thư mục làm việc riêng, ví dụ thư mục chứa bộ tài liệu này, vì bước 4 sẽ ghi file dữ liệu vào thư mục hiện tại.
+
+
+\Needspace{10\baselineskip}
+\section{Mô hình lab và khởi động Kafka}
+
+\Needspace{7\baselineskip}
+\subsection{Mô hình lab một broker}
+
+Phần 2--9 dùng một container có tên \texttt{kafka-\allowbreak{}architecture-\allowbreak{}lab}. Topic \texttt{lab-\allowbreak{}order-\allowbreak{}events} có \textbf{3 partition}, nhưng \textbf{replication factor bằng 1} vì môi trường chỉ có một broker.
+
+
+\begingroup\small
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{@{}p{0.4\linewidth}p{0.56\linewidth}@{}}
+\toprule
+\rowcolor{rowLavender}
+\textbf{Thành phần} & \textbf{Giá trị dùng trong lab} \\
+\midrule
+\endfirsthead
+\toprule
+\rowcolor{rowLavender}
+\textbf{Thành phần} & \textbf{Giá trị dùng trong lab} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Docker image & \texttt{apache/\allowbreak{}kafka:4.\allowbreak{}1.\allowbreak{}2} \\
+Container & \texttt{kafka-\allowbreak{}architecture-\allowbreak{}lab} \\
+Bootstrap server trong container & \texttt{localhost:9092} \\
+Topic & \texttt{lab-\allowbreak{}order-\allowbreak{}events} \\
+Partition & 3 \\
+Replication factor & 1 \\
+Key của record & \texttt{order\_\allowbreak{}id} \\
+Dữ liệu ban đầu & 30 đơn, mỗi đơn có hai sự kiện, tổng cộng 60 record \\
+\end{longtable}
+\endgroup
+
+Mô hình này đủ để quan sát partition, key, offset, group assignment và lag. Nó không kiểm chứng được replication giữa nhiều broker; phần 10 dùng một cluster 3 broker riêng cho nội dung đó.
+
+
+\Needspace{7\baselineskip}
+\subsection{Kiểm tra Docker và khởi động broker}
+
+Mở Docker Desktop, chờ engine sẵn sàng rồi mở PowerShell. Chạy:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker version
+\end{aivncodebox}
+
+Cần có thông tin \textbf{Server}, không chỉ Client. Nếu có lỗi kết nối Docker API hoặc named pipe, quay lại Docker Desktop trước khi chạy các bước tiếp theo.
+
+
+Tải image và tạo container theo cách khởi động Docker trong \href{https://kafka.apache.org/41/getting-started/quickstart/}{Kafka Quick Start}:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker pull apache/kafka:4.1.2
+docker run -d --name kafka-architecture-lab -p 127.0.0.1:9092:9092 apache/kafka:4.1.2
+docker ps --filter name=kafka-architecture-lab
+\end{aivncodebox}
+
+Nếu tên container đã được dùng từ lần trước, kiểm tra bằng \texttt{docker ps -\allowbreak{}a -\allowbreak{}-\allowbreak{}filter name=\allowbreak{}kafka-\allowbreak{}architecture-\allowbreak{}lab}. Một lượt lab mới cần môi trường mới để giữ đúng số lượng record; xóa container cũ bằng \texttt{docker rm -\allowbreak{}f kafka-\allowbreak{}architecture-\allowbreak{}lab} trước khi chạy lại \texttt{docker run}.
+
+
+Kiểm tra broker đã nhận yêu cầu được chưa:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list
+\end{aivncodebox}
+
+Lệnh thành công nhưng chưa in topic nào là bình thường. Trong lượt chạy kiểm chứng, broker sẵn sàng sau khoảng 2 giây. Nếu lệnh báo lỗi kết nối, xem log và thử lại sau vài giây:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker logs --tail 60 kafka-architecture-lab
+\end{aivncodebox}
+
+\begin{evidencebox}
+\textbf{Điểm kiểm tra:} container đang chạy và lệnh liệt kê topic không còn báo lỗi kết nối broker.
+\end{evidencebox}
+
+\Needspace{10\baselineskip}
+\section{Tạo topic với ba partition}
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic lab-order-events --partitions 3 --replication-factor 1
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic lab-order-events
+\end{aivncodebox}
+
+Không dùng \texttt{-\allowbreak{}-\allowbreak{}if-\allowbreak{}not-\allowbreak{}exists} ở đây để tránh vô tình tiếp tục trên topic đã chứa dữ liệu cũ. Xem \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{các thao tác với topic}.
+
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Created topic lab-order-events.
+Topic: lab-order-events  TopicId: WoTwILKF...  PartitionCount: 3  ReplicationFactor: 1
+  Configs: min.insync.replicas=1,segment.bytes=1073741824
+  Partition: 0  Leader: 1  Replicas: 1  Isr: 1  Elr:   LastKnownElr:
+  Partition: 1  Leader: 1  Replicas: 1  Isr: 1  Elr:   LastKnownElr:
+  Partition: 2  Leader: 1  Replicas: 1  Isr: 1  Elr:   LastKnownElr:
+\end{aivnCodeOutput}
+
+Đọc kết quả theo ba ý:
+
+
+\begin{itemize}
+\item \texttt{PartitionCount} là 3; có các partition 0, 1 và 2.
+\item \texttt{ReplicationFactor} là 1, nên mỗi partition chỉ có một replica trong \texttt{Replicas} và \texttt{Isr}.
+\item Broker \texttt{1} là leader của cả ba partition vì đây là broker duy nhất. Hai cột \texttt{Elr} và \texttt{LastKnownElr} liên quan đến cơ chế Eligible Leader Replicas, sẽ gặp lại ở phần 10.
+\end{itemize}
+
+\begin{evidencebox}
+\textbf{E1:} lưu output \texttt{-\allowbreak{}-\allowbreak{}describe}.
+\end{evidencebox}
+
+\begin{questionbox}{Câu hỏi Q1.}
+Topic này có bao nhiêu partition và bao nhiêu replica? Nếu tạo lại với replication factor 3 trên một cluster đủ broker, số replica là bao nhiêu?
+\end{questionbox}
+
+\Needspace{10\baselineskip}
+\section{Tạo và gửi 60 record có key}
+
+\Needspace{7\baselineskip}
+\subsection{Tạo dữ liệu đơn hàng}
+
+Chạy đoạn PowerShell sau. Mỗi đơn có hai sự kiện theo thứ tự tạo đơn rồi thanh toán; mỗi dòng có cấu trúc \texttt{key|\allowbreak{}JSON}.
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+$events = foreach ($number in 1..30) {
+    $orderId = "o{0:D4}" -f $number
+    foreach ($eventType in @("OrderCreated", "OrderPaid")) {
+        $value = [ordered]@{
+            event_id = "$orderId-$eventType"
+            event_type = $eventType
+            order_id = $orderId
+            amount = 450000
+            currency = "VND"
+        }
+        '{0}|{1}' -f $orderId, ($value | ConvertTo-Json -Compress)
+    }
+}
+$events.Count
+$events | Select-Object -First 2
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+60
+o0001|{"event_id":"o0001-OrderCreated","event_type":"OrderCreated","order_id":"o0001","amount":450000,"currency":"VND"}
+o0001|{"event_id":"o0001-OrderPaid","event_type":"OrderPaid","order_id":"o0001","amount":450000,"currency":"VND"}
+\end{aivnCodeOutput}
+
+\Needspace{7\baselineskip}
+\subsection{Ghi file không BOM và gửi bằng console producer}
+
+Ghi dữ liệu ra file UTF-8 \textbf{không BOM}, chép file vào container rồi để console producer đọc file từ bên trong container:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+$eventFile = Join-Path (Get-Location) 'lab-order-events.txt'
+[System.IO.File]::WriteAllText($eventFile, ($events -join "`n") + "`n")
+docker cp $eventFile kafka-architecture-lab:/tmp/lab-order-events.txt
+docker exec kafka-architecture-lab sh -c "/opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic lab-order-events --property parse.key=true --property key.separator='|' --producer-property acks=all < /tmp/lab-order-events.txt"
+\end{aivncodebox}
+
+Lệnh gửi thành công không in gì. \texttt{parse.\allowbreak{}key=\allowbreak{}true} yêu cầu console producer đọc phần trước dấu \texttt{|\allowbreak{}} làm key. Dấu phân cách chỉ phục vụ nhập liệu ở công cụ console; nó không phải cấu trúc bắt buộc của một Kafka record. Xem \href{https://github.com/apache/kafka/blob/4.1.2/tools/src/main/java/org/apache/kafka/tools/LineMessageReader.java}{mã nguồn LineMessageReader}.
+
+
+\begin{notebox}
+\textbf{Vì sao không pipe thẳng \texttt{\$events |\allowbreak{} docker exec -\allowbreak{}i .\allowbreak{}.\allowbreak{}.\allowbreak{}}?} Trong lượt chạy thử đầu tiên, cách pipe này trên Windows PowerShell 5.1 gắn ký tự BOM (\texttt{U+FEFF}) vào đầu dòng đầu tiên. Record đầu tiên vì thế có key \texttt{\textbackslash{}uFEFFo0001}, khác với key \texttt{o0001} của record thứ hai. Hai key khác nhau có thể bị đưa vào hai partition khác nhau, làm hỏng chính phép quan sát “cùng key, cùng partition”. Ghi file bằng \texttt{WriteAllText} rồi đọc trong container tránh được việc PowerShell mã hóa lại dữ liệu khi pipe.
+\end{notebox}
+
+Chỉ gửi file này \textbf{một lần}. Gửi lại sẽ tạo thêm 60 record; trùng \texttt{event\_\allowbreak{}id} trong JSON không khiến Kafka bỏ qua record mới.
+
+
+\Needspace{10\baselineskip}
+\section{Đọc kèm partition, offset và key}
+
+Đọc lại toàn bộ dữ liệu bằng một group riêng, chỉ phục vụ việc quan sát, và tắt auto commit:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+$lines = docker exec kafka-architecture-lab /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic lab-order-events --group lab-inspect-01 --from-beginning --max-messages 60 --timeout-ms 15000 --consumer-property enable.auto.commit=false --property print.partition=true --property print.offset=true --property print.key=true --property 'key.separator=|'
+$lines | Select-Object -First 4
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Processed a total of 60 messages
+Partition:2|Offset:0|o0003|{"event_id":"o0003-OrderCreated",...}
+Partition:2|Offset:1|o0003|{"event_id":"o0003-OrderPaid",...}
+Partition:2|Offset:2|o0008|{"event_id":"o0008-OrderCreated",...}
+Partition:2|Offset:3|o0008|{"event_id":"o0008-OrderPaid",...}
+\end{aivnCodeOutput}
+
+Dòng \texttt{Processed a total of 60 messages} được in ra luồng lỗi (stderr). Windows PowerShell 5.1 có thể hiển thị dòng này màu đỏ kèm chữ \texttt{NativeCommandError}; đây là thông báo bình thường, không phải lỗi. Xem \href{https://github.com/apache/kafka/blob/4.1.2/tools/src/main/java/org/apache/kafka/tools/consumer/DefaultMessageFormatter.java}{DefaultMessageFormatter} về các thuộc tính \texttt{print.\allowbreak{}*}.
+
+
+Đếm record theo partition:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+$partitionIds = $lines | ForEach-Object { if ($_ -match 'Partition:(\d+)') { $Matches[1] } }
+$partitionIds.Count
+$partitionIds | Group-Object | Sort-Object Name | Select-Object Name, Count
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+60
+
+Name Count
+---- -----
+0       20
+1       22
+2       18
+\end{aivnCodeOutput}
+
+Phân phối không đều (20/22/18) là bình thường: partitioner băm key thành số partition, không chia lần lượt. Với cùng 30 key, cùng số partition và cùng client Java mặc định, phép băm cho ra cùng kết quả, nên bạn có thể thấy đúng các con số này. Nếu số khác, hãy kiểm tra số lần gửi và key có bị BOM hay không trước khi kết luận.
+
+
+Kiểm tra hai sự kiện của đơn đầu tiên:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+$lines | Where-Object { $_ -match '\|o0001\|' }
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Partition:0|Offset:0|o0001|{"event_id":"o0001-OrderCreated",...}
+Partition:0|Offset:1|o0001|{"event_id":"o0001-OrderPaid",...}
+\end{aivnCodeOutput}
+
+Hai record cùng key nằm ở cùng partition và \texttt{OrderCreated} có offset nhỏ hơn \texttt{OrderPaid}. Thứ tự in ra giữa các partition không phải thứ tự nghiệp vụ toàn cục: lượt đọc có thể in P2 trước P0.
+
+
+\begin{evidencebox}
+\textbf{E2, E3:} lưu bảng đếm và hai dòng của \texttt{o0001}.
+\end{evidencebox}
+
+\begin{questionbox}{Câu hỏi Q2.}
+Offset 0 xuất hiện ở cả P0, P1 và P2. Vì sao đây không phải là ba bản sao của cùng một record?
+\end{questionbox}
+
+\begin{questionbox}{Câu hỏi Q3.}
+Nếu topic được tạo với 4 partition thay vì 3, bạn có chắc \texttt{o0001} vẫn vào P0 không? Điều gì vẫn được giữ?
+\end{questionbox}
+
+\Needspace{10\baselineskip}
+\section{Hai consumer chia việc trong cùng group}
+
+Mở \textbf{hai cửa sổ PowerShell mới} và giữ các consumer chạy trong suốt phần 6--8.
+
+
+\Needspace{6\baselineskip}
+\textbf{Cửa sổ A:}\par\nopagebreak
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec -it kafka-architecture-lab /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic lab-order-events --group lab-stock --from-beginning --consumer-property client.id=stock-c1 --consumer-property enable.auto.commit=true --consumer-property auto.commit.interval.ms=1000 --property print.partition=true --property print.offset=true --property print.key=true
+\end{aivncodebox}
+
+\Needspace{6\baselineskip}
+\textbf{Cửa sổ B} (mở sau khi cửa sổ A đã in dữ liệu):\par\nopagebreak
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec -it kafka-architecture-lab /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic lab-order-events --group lab-stock --from-beginning --consumer-property client.id=stock-c2 --consumer-property enable.auto.commit=true --consumer-property auto.commit.interval.ms=1000 --property print.partition=true --property print.offset=true --property print.key=true
+\end{aivncodebox}
+
+Khoảng 10 giây sau, kiểm tra thành viên và partition được giao từ terminal quản trị:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group lab-stock --members --verbose
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group lab-stock
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+GROUP      CONSUMER-ID          CLIENT-ID  #PARTITIONS  CURRENT-ASSIGNMENT
+lab-stock  stock-c1-95894cec... stock-c1   2            lab-order-events:0,1
+lab-stock  stock-c2-9be19f4d... stock-c2   1            lab-order-events:2
+
+GROUP      TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CLIENT-ID
+lab-stock  lab-order-events  0          20              20              0    stock-c1
+lab-stock  lab-order-events  1          22              22              0    stock-c1
+lab-stock  lab-order-events  2          18              18              0    stock-c2
+\end{aivnCodeOutput}
+
+Trong lượt chạy kiểm chứng, cửa sổ A in đủ \textbf{60 record}, còn cửa sổ B \textbf{không in record nào}, dù \texttt{stock-\allowbreak{}c2} đang sở hữu P2. Lý do: A khởi động trước, nhận cả ba partition, đọc hết và commit offset. Khi B tham gia, group rebalance và giao P2 cho B; B tiếp tục từ committed offset 18 của P2 nên không còn gì để đọc. \texttt{-\allowbreak{}-\allowbreak{}from-\allowbreak{}beginning} chỉ có tác dụng khi group chưa có committed offset.
+
+
+Gửi thêm hai sự kiện mới để thấy B làm việc:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+$newFile = Join-Path (Get-Location) 'lab-new-events.txt'
+[System.IO.File]::WriteAllText($newFile, (@('o9991|{"event_id":"e-new-1","event_type":"OrderCreated","order_id":"o9991"}', 'o9992|{"event_id":"e-new-2","event_type":"OrderCreated","order_id":"o9992"}') -join "`n") + "`n")
+docker cp $newFile kafka-architecture-lab:/tmp/lab-new-events.txt
+docker exec kafka-architecture-lab sh -c "/opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic lab-order-events --property parse.key=true --property key.separator='|' < /tmp/lab-new-events.txt"
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+(A) Partition:0  Offset:20  o9992  {"event_id":"e-new-2",...}
+(B) Partition:2  Offset:18  o9991  {"event_id":"e-new-1",...}
+\end{aivnCodeOutput}
+
+Dòng \texttt{(A)} là cửa sổ A, dòng \texttt{(B)} là cửa sổ B. Record \texttt{o9991} vào P2 nên xuất hiện ở B; \texttt{o9992} vào P0 nên xuất hiện ở A. Chạy lại \texttt{-\allowbreak{}-\allowbreak{}describe} sẽ thấy \texttt{LOG-\allowbreak{}END-\allowbreak{}OFFSET} của P0 và P2 tăng thêm 1 và \texttt{LAG} về 0 sau chu kỳ auto commit. Auto commit trong ví dụ console chỉ phản ánh tiến độ đọc; nó không chứng minh một thao tác nghiệp vụ như trừ tồn kho đã hoàn tất. Xem \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{quản lý consumer group}.
+
+
+\begin{evidencebox}
+\textbf{E4:} lưu output \texttt{-\allowbreak{}-\allowbreak{}members -\allowbreak{}-\allowbreak{}verbose}.
+\end{evidencebox}
+
+\begin{questionbox}{Câu hỏi Q4.}
+Cửa sổ B không in record nào trước khi gửi dữ liệu mới. Từ bằng chứng nào bạn biết B vẫn được phân công partition?
+\end{questionbox}
+
+\Needspace{10\baselineskip}
+\section{Đọc độc lập bằng một group khác}
+
+Giữ A và B chạy. Từ terminal quản trị, dùng một group mới để đọc toàn bộ record đang được lưu:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic lab-order-events --group lab-analytics-01 --from-beginning --max-messages 62 --timeout-ms 15000 --consumer-property enable.auto.commit=false --property print.partition=true --property print.offset=true --property print.key=true
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+...
+Processed a total of 62 messages
+\end{aivnCodeOutput}
+
+Group mới đọc đủ \textbf{62 record} (60 ban đầu và 2 record mới), dù group \texttt{lab-\allowbreak{}stock} đã đọc và commit các record đó. Commit của một group không làm mất dữ liệu của topic và không ảnh hưởng tiến độ của group khác. Xem \href{https://kafka.apache.org/41/configuration/consumer-configs/}{consumer offset reset}.
+
+
+\begin{evidencebox}
+\textbf{E5:} lưu dòng \texttt{Processed a total of 62 messages}.
+\end{evidencebox}
+
+\Needspace{10\baselineskip}
+\section{Bốn consumer trên ba partition}
+
+Mở thêm cửa sổ \textbf{C} và \textbf{D} với cùng \texttt{group.\allowbreak{}id=\allowbreak{}lab-\allowbreak{}stock}, chỉ đổi \texttt{client.\allowbreak{}id}:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec -it kafka-architecture-lab /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic lab-order-events --group lab-stock --consumer-property client.id=stock-c3 --property print.partition=true --property print.offset=true --property print.key=true
+\end{aivncodebox}
+
+Cửa sổ D chạy cùng lệnh với \texttt{client.\allowbreak{}id=\allowbreak{}stock-\allowbreak{}c4}. Chờ khoảng 10 giây rồi kiểm tra:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group lab-stock --members --verbose
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+GROUP      CONSUMER-ID          CLIENT-ID  #PARTITIONS  CURRENT-ASSIGNMENT
+lab-stock  stock-c1-95894cec... stock-c1   1            lab-order-events:0
+lab-stock  stock-c3-2a5fccc8... stock-c3   1            lab-order-events:2
+lab-stock  stock-c4-5f11ed59... stock-c4   0            -
+lab-stock  stock-c2-9be19f4d... stock-c2   1            lab-order-events:1
+\end{aivnCodeOutput}
+
+Sau rebalance, mỗi partition thuộc đúng một consumer và \textbf{một consumer có 0 partition}. Lưu ý \texttt{stock-\allowbreak{}c2} đã chuyển từ P2 sang P1: không nên giả định một consumer luôn giữ một partition cố định. Consumer cụ thể nào bị để trống có thể khác trên máy bạn.
+
+
+\begin{evidencebox}
+\textbf{E6:} lưu output có dòng \texttt{\#PARTITIONS} bằng 0.
+\end{evidencebox}
+
+\begin{questionbox}{Câu hỏi Q5.}
+Thêm consumer thứ năm vào \texttt{lab-\allowbreak{}stock} có làm group đọc nhanh hơn không? Muốn có 5 consumer cùng làm việc thì phải thay đổi gì, và thay đổi đó ảnh hưởng gì đến ánh xạ key?
+\end{questionbox}
+
+\Needspace{10\baselineskip}
+\section{Consumer lag, reset offset và replay}
+
+\Needspace{7\baselineskip}
+\subsection{Tạo lag}
+
+Dừng cả bốn cửa sổ A--D bằng \texttt{Ctrl+C}. Group \texttt{lab-\allowbreak{}stock} giờ không còn thành viên nhưng committed offset vẫn được lưu. Gửi thêm 10 đơn mới:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+$more = foreach ($number in 31..40) { $o = "o{0:D4}" -f $number; '{0}|{{"event_id":"{0}-OrderCreated","event_type":"OrderCreated","order_id":"{0}"}}' -f $o }
+$moreFile = Join-Path (Get-Location) 'lab-more-events.txt'
+[System.IO.File]::WriteAllText($moreFile, ($more -join "`n") + "`n")
+docker cp $moreFile kafka-architecture-lab:/tmp/lab-more-events.txt
+docker exec kafka-architecture-lab sh -c "/opt/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic lab-order-events --property parse.key=true --property key.separator='|' < /tmp/lab-more-events.txt"
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group lab-stock
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Consumer group 'lab-stock' has no active members.
+
+GROUP      TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG  CONSUMER-ID
+lab-stock  lab-order-events  0          21              22              1    -
+lab-stock  lab-order-events  1          22              25              3    -
+lab-stock  lab-order-events  2          19              25              6    -
+\end{aivnCodeOutput}
+
+Tổng lag là 1 + 3 + 6 = \textbf{10}, đúng bằng số record mới. Lag là khoảng cách offset giữa committed offset của group và cuối log của từng partition. Nó không đo bằng giây, và với dữ liệu thực tế cũng không luôn bằng số công việc nghiệp vụ còn lại.
+
+
+\Needspace{7\baselineskip}
+\subsection{Đặt lại offset và đọc lại}
+
+Đặt lại committed offset của \texttt{lab-\allowbreak{}stock} về đầu log. Luôn chạy \texttt{-\allowbreak{}-\allowbreak{}dry-\allowbreak{}run} trước để xem kết quả dự kiến, rồi mới \texttt{-\allowbreak{}-\allowbreak{}execute}. Lệnh chỉ chạy được khi group không có thành viên hoạt động.
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group lab-stock --topic lab-order-events --reset-offsets --to-earliest --dry-run
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --group lab-stock --topic lab-order-events --reset-offsets --to-earliest --execute
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group lab-stock
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+GROUP      TOPIC             PARTITION  NEW-OFFSET
+lab-stock  lab-order-events  0          0
+lab-stock  lab-order-events  1          0
+lab-stock  lab-order-events  2          0
+
+GROUP      TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+lab-stock  lab-order-events  0          0               22              22
+lab-stock  lab-order-events  1          0               25              25
+lab-stock  lab-order-events  2          0               25              25
+\end{aivnCodeOutput}
+
+Chạy lại một consumer của \texttt{lab-\allowbreak{}stock} để replay toàn bộ log:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic lab-order-events --group lab-stock --max-messages 72 --timeout-ms 15000 --property print.partition=true --property print.offset=true
+docker exec kafka-architecture-lab /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server localhost:9092 --describe --group lab-stock
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+...
+Processed a total of 72 messages
+
+GROUP      TOPIC             PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+lab-stock  lab-order-events  0          22              22              0
+lab-stock  lab-order-events  1          25              25              0
+lab-stock  lab-order-events  2          25              25              0
+\end{aivnCodeOutput}
+
+Group đọc lại đủ \textbf{72 record} (60 + 2 + 10) vì dữ liệu vẫn nằm trong retention của topic. Lệnh này không có \texttt{-\allowbreak{}-\allowbreak{}from-\allowbreak{}beginning}: vị trí bắt đầu đến từ committed offset vừa được đặt lại.
+
+
+\begin{evidencebox}
+\textbf{E7:} lưu bảng lag ở 9.1 và bảng sau replay.
+\end{evidencebox}
+
+\begin{questionbox}{Câu hỏi Q6.}
+Nếu ứng dụng tồn kho thật đã trừ kho cho 62 sự kiện đầu, việc replay ở trên gây hậu quả gì? Ứng dụng cần thiết kế gì để replay an toàn?
+\end{questionbox}
+
+\Needspace{10\baselineskip}
+\section{Mở rộng: replication với cluster 3 broker}
+
+\Needspace{7\baselineskip}
+\subsection{Khởi động cluster}
+
+Phần này dùng file docker-compose.replication.yml: ba node \texttt{kafka-\allowbreak{}1}, \texttt{kafka-\allowbreak{}2}, \texttt{kafka-\allowbreak{}3}, mỗi node vừa là broker vừa là controller (KRaft). Cluster không mở cổng ra máy host; mọi lệnh chạy bằng \texttt{docker exec kafka-\allowbreak{}1}. Có thể giữ hoặc dừng container của phần 2--9, hai môi trường không dùng chung cổng.
+
+
+Từ thư mục \texttt{slaivn}, chạy:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker compose -f kafka/lab/docker-compose.replication.yml up -d
+docker exec kafka-1 /opt/kafka/bin/kafka-metadata-quorum.sh --bootstrap-server kafka-1:9092 describe --status
+\end{aivncodebox}
+
+Nếu lệnh thứ hai báo lỗi kết nối, chờ vài giây rồi chạy lại. Kết quả cần có \texttt{CurrentVoters} với ba node 1, 2 và 3.
+
+
+\Needspace{7\baselineskip}
+\subsection{Topic replication factor 3}
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --topic lab-replicated --partitions 3 --replication-factor 3 --config min.insync.replicas=2
+docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --describe --topic lab-replicated
+docker exec kafka-1 sh -c "printf 'o0001|created\no0002|created\no0003|created\n' | /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server kafka-1:9092 --topic lab-replicated --property parse.key=true --property key.separator='|' --producer-property acks=all"
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Partition: 0  Leader: 1  Replicas: 1,2,3  Isr: 1,2,3
+Partition: 1  Leader: 2  Replicas: 2,3,1  Isr: 2,3,1
+Partition: 2  Leader: 3  Replicas: 3,1,2  Isr: 3,1,2
+\end{aivnCodeOutput}
+
+Có 3 partition logic và 9 replica. Leader được phân bố trên ba broker; mỗi broker vừa là leader của một partition vừa giữ follower của hai partition còn lại, đúng như Hình 4 của bài lý thuyết. Lệnh gửi \texttt{acks=\allowbreak{}all} thành công không in gì.
+
+
+\Needspace{7\baselineskip}
+\subsection{Mất một broker}
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker stop kafka-3
+docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --describe --topic lab-replicated
+docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --describe --topic lab-replicated --under-replicated-partitions
+docker exec kafka-1 sh -c "printf 'o0001|paid\no0002|paid\no0003|paid\n' | /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server kafka-1:9092 --topic lab-replicated --property parse.key=true --property key.separator='|' --producer-property acks=all"
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Partition: 0  Leader: 1  Replicas: 1,2,3  Isr: 1,2
+Partition: 1  Leader: 2  Replicas: 2,3,1  Isr: 2,1
+Partition: 2  Leader: 1  Replicas: 3,1,2  Isr: 1,2
+\end{aivnCodeOutput}
+
+Broker 3 bị loại khỏi ISR của cả ba partition. P2 mất leader nên được bầu leader mới là broker 1. \texttt{Replicas} không đổi: đó là danh sách replica được gán, không phải danh sách đang theo kịp. Cả ba partition xuất hiện trong \texttt{-\allowbreak{}-\allowbreak{}under-\allowbreak{}replicated-\allowbreak{}partitions}. ISR còn 2, bằng \texttt{min.\allowbreak{}insync.\allowbreak{}replicas}, nên lần gửi \texttt{acks=\allowbreak{}all} vẫn thành công.
+
+
+\Needspace{7\baselineskip}
+\subsection{ISR thấp hơn ngưỡng tối thiểu}
+
+Nâng ngưỡng lên 3 trong khi \texttt{kafka-\allowbreak{}3} vẫn dừng, rồi gửi bằng \texttt{acks=\allowbreak{}all}:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-1 /opt/kafka/bin/kafka-configs.sh --bootstrap-server kafka-1:9092 --alter --entity-type topics --entity-name lab-replicated --add-config min.insync.replicas=3
+docker exec kafka-1 sh -c "printf 'o0004|created\n' | /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server kafka-1:9092 --topic lab-replicated --property parse.key=true --property key.separator='|' --producer-property acks=all --producer-property delivery.timeout.ms=10000 --producer-property request.timeout.ms=5000"
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+WARN ... on topic-partition lab-replicated-0, retrying (2 attempts left). Error: NOT_ENOUGH_REPLICAS
+WARN ... retrying (1 attempts left). Error: NOT_ENOUGH_REPLICAS
+WARN ... retrying (0 attempts left). Error: NOT_ENOUGH_REPLICAS
+ERROR Error when sending message to topic lab-replicated with key: 5 bytes, value: 7 bytes ...
+\end{aivnCodeOutput}
+
+Leader từ chối ghi vì ISR (2) nhỏ hơn \texttt{min.\allowbreak{}insync.\allowbreak{}replicas} (3). Chú ý: console producer vẫn kết thúc với exit code 0, nên phải đọc dòng \texttt{ERROR} thay vì chỉ dựa vào việc lệnh kết thúc.
+
+
+Thử cùng record với \texttt{acks=\allowbreak{}1}, rồi xem offset cuối của từng partition:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-1 sh -c "printf 'o0004|created\n' | /opt/kafka/bin/kafka-console-producer.sh --bootstrap-server kafka-1:9092 --topic lab-replicated --property parse.key=true --property key.separator='|' --producer-property acks=1"
+docker exec kafka-1 /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server kafka-1:9092 --topic lab-replicated
+docker exec kafka-1 /opt/kafka/bin/kafka-features.sh --bootstrap-server kafka-1:9092 describe
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+lab-replicated:0:4
+lab-replicated:1:0
+lab-replicated:2:2
+Feature: eligible.leader.replicas.version  SupportedMinVersion: 0  SupportedMaxVersion: 1  FinalizedVersionLevel: 1
+\end{aivnCodeOutput}
+
+Lần gửi \texttt{acks=\allowbreak{}1} không báo lỗi vì producer chỉ chờ leader ghi vào log cục bộ. Nhưng offset cuối của P0 vẫn là \textbf{4}: record mới chưa đọc được. Cluster Kafka 4.1.2 mới tạo có \textbf{ELR bật mặc định} (\texttt{eligible.\allowbreak{}leader.\allowbreak{}replicas.\allowbreak{}version} ở mức 1). Khi ELR bật, high watermark của partition chỉ tăng khi ISR đạt ít nhất \texttt{min.\allowbreak{}insync.\allowbreak{}replicas}, nên consumer chưa thấy record. Đây chính là thay đổi ngữ nghĩa mà ghi chú ELR ở mục 6.3 bài lý thuyết nhắc tới; ví dụ trong bài đọc mô tả trường hợp ELR tắt. Xem \href{https://kafka.apache.org/41/configuration/topic-configs/}{ghi chú ELR trong cấu hình topic}.
+
+
+\Needspace{7\baselineskip}
+\subsection{Broker quay lại}
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker start kafka-3
+docker exec kafka-1 /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --describe --topic lab-replicated
+docker exec kafka-1 /opt/kafka/bin/kafka-get-offsets.sh --bootstrap-server kafka-1:9092 --topic lab-replicated
+\end{aivncodebox}
+
+Chờ khoảng 20 giây nếu ISR chưa đủ ba replica rồi chạy lại.
+
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Partition: 0  Leader: 1  Replicas: 1,2,3  Isr: 1,2,3
+Partition: 1  Leader: 2  Replicas: 2,3,1  Isr: 2,1,3
+Partition: 2  Leader: 1  Replicas: 3,1,2  Isr: 1,2,3
+lab-replicated:0:5
+lab-replicated:1:0
+lab-replicated:2:2
+\end{aivnCodeOutput}
+
+Broker 3 bắt kịp và trở lại ISR. ISR đạt ngưỡng 3 nên high watermark của P0 tăng lên 5: record \texttt{o0004} gửi bằng \texttt{acks=\allowbreak{}1} giờ mới đọc được. Leader của P2 vẫn là broker 1. Kafka tự trả leader về replica ưu tiên sau một chu kỳ kiểm tra; có thể làm ngay bằng lệnh:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker exec kafka-1 /opt/kafka/bin/kafka-leader-election.sh --bootstrap-server kafka-1:9092 --election-type preferred --topic lab-replicated --partition 2
+\end{aivncodebox}
+
+\begin{aivnCodeOutput}{Kết quả quan sát (lượt chạy 10/11/2026)}
+Successfully completed leader election (PREFERRED) for partitions lab-replicated-2
+\end{aivnCodeOutput}
+
+\begin{evidencebox}
+\textbf{E8:} lưu ISR ở 10.2 và 10.3 cùng dòng \texttt{NOT\_\allowbreak{}ENOUGH\_\allowbreak{}REPLICAS} ở 10.4.
+\end{evidencebox}
+
+\begin{questionbox}{Câu hỏi Q7.}
+Ở 10.3, broker 3 đã dừng nhưng vẫn có trong \texttt{Replicas}. Hai cột \texttt{Replicas} và \texttt{Isr} khác nhau ở ý nghĩa nào?
+\end{questionbox}
+
+\begin{questionbox}{Câu hỏi Q8.}
+Ở 10.4, producer \texttt{acks=\allowbreak{}1} nhận xác nhận nhưng consumer chưa đọc được record. Điều đó nói gì về câu “producer nhận ack nghĩa là dữ liệu đã an toàn và sẵn sàng”?
+\end{questionbox}
+
+Dọn cluster khi xong:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker compose -f kafka/lab/docker-compose.replication.yml down -v
+\end{aivncodebox}
+
+\Needspace{10\baselineskip}
+\section{Xử lý lỗi thường gặp}
+
+\begingroup\small
+\renewcommand{\arraystretch}{1.2}
+\begin{longtable}{@{}p{0.4\linewidth}p{0.56\linewidth}@{}}
+\toprule
+\rowcolor{rowLavender}
+\textbf{Hiện tượng} & \textbf{Cách kiểm tra} \\
+\midrule
+\endfirsthead
+\toprule
+\rowcolor{rowLavender}
+\textbf{Hiện tượng} & \textbf{Cách kiểm tra} \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+Không kết nối Docker API & Mở Docker Desktop, chờ engine chạy và kiểm tra lại \texttt{docker version} \\
+Container thoát hoặc broker chưa sẵn sàng & Xem \texttt{docker ps -\allowbreak{}a} và \texttt{docker logs -\allowbreak{}-\allowbreak{}tail 60 kafka-\allowbreak{}architecture-\allowbreak{}lab} \\
+Cổng 9092 đang được dùng & Tìm tiến trình hoặc container đang giữ cổng; nếu chỉ đổi host port, các lệnh \texttt{docker exec} vẫn dùng cổng 9092 bên trong container \\
+Topic đã tồn tại & Xóa container và chạy lại từ phần 2; không dùng dữ liệu của lượt trước \\
+Hai record của \texttt{o0001} ở hai partition khác nhau & Key đầu tiên có thể bị gắn BOM; dùng cách ghi file ở 4.2 và gửi lại trên môi trường mới \\
+Dòng \texttt{Processed a total of .\allowbreak{}.\allowbreak{}.\allowbreak{}} màu đỏ kèm \texttt{NativeCommandError} & Thông báo in ra stderr; Windows PowerShell 5.1 hiển thị như lỗi nhưng lệnh đã chạy đúng \\
+Consumer chưa đủ 60 record rồi timeout & Kiểm tra số lần gửi, tên topic và offset; tăng \texttt{-\allowbreak{}-\allowbreak{}timeout-\allowbreak{}ms} nếu máy chậm \\
+Cửa sổ consumer mới không in gì & Group đã có committed offset; kiểm tra assignment rồi gửi thêm dữ liệu \\
+\texttt{-\allowbreak{}-\allowbreak{}reset-\allowbreak{}offsets} báo group đang hoạt động & Dừng mọi consumer của group bằng \texttt{Ctrl+C}, chờ vài giây rồi chạy lại \\
+Producer \texttt{acks=\allowbreak{}all} báo \texttt{NOT\_\allowbreak{}ENOUGH\_\allowbreak{}REPLICAS} & ISR nhỏ hơn \texttt{min.\allowbreak{}insync.\allowbreak{}replicas}; đây là kết quả mong đợi ở 10.4 \\
+Cảnh báo \texttt{Couldn't resolve server kafka-\allowbreak{}3} & Có trong danh sách bootstrap một broker đã dừng; dùng \texttt{kafka-\allowbreak{}1:9092} như trong lab \\
+\end{longtable}
+\endgroup
+
+\Needspace{10\baselineskip}
+\section{Dừng môi trường và nộp bằng chứng}
+
+Dừng mọi consumer còn chạy bằng \texttt{Ctrl+C}. Nếu muốn giữ dữ liệu để học tiếp, chỉ dừng container:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker stop kafka-architecture-lab
+\end{aivncodebox}
+
+Nếu đã hoàn tất, xóa container lab cùng dữ liệu bên trong:
+
+
+\begin{aivncodebox}[language={}]{PowerShell}
+docker rm -f kafka-architecture-lab
+\end{aivncodebox}
+
+Trước khi dọn, kiểm tra báo cáo đã có đủ E1--E7 (và E8 nếu làm phần mở rộng), câu trả lời Q1--Q8, phiên bản image và số record thực tế đã gửi.
+
+
+\section*{Tài liệu tham khảo}
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+
+\begin{itemize}
+\item \href{https://kafka.apache.org/41/getting-started/quickstart/}{Kafka Quick Start: khởi động Docker, ghi và đọc sự kiện}.
+\item \href{https://kafka.apache.org/41/operations/basic-kafka-operations/}{Basic Kafka Operations: topic, consumer group và reset offset}.
+\item \href{https://github.com/apache/kafka/blob/4.1.2/tools/src/main/java/org/apache/kafka/tools/LineMessageReader.java}{LineMessageReader của Kafka 4.1.2: nhập key/value ở console producer}.
+\item \href{https://github.com/apache/kafka/blob/4.1.2/tools/src/main/java/org/apache/kafka/tools/consumer/DefaultMessageFormatter.java}{DefaultMessageFormatter của Kafka 4.1.2: in partition, offset và key}.
+\item \href{https://kafka.apache.org/41/configuration/consumer-configs/}{Consumer Configs: auto commit và offset reset}.
+\item \href{https://kafka.apache.org/41/configuration/topic-configs/}{Topic Configs: \texttt{min.\allowbreak{}insync.\allowbreak{}replicas} và ghi chú ELR}.
+\item \href{https://github.com/apache/kafka/blob/4.1.2/docker/examples/README.md}{Docker image apache/kafka: cấu hình bằng biến môi trường}.
+\end{itemize}

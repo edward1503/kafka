@@ -1,0 +1,126 @@
+% Visual system adapted from Template Reading/template.tex (AIO2026).
+% Unused demo packages and external relative imports are omitted.
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage{lmodern}
+\usepackage[table,dvipsnames]{xcolor}
+\usepackage{amsmath,amssymb,graphicx,booktabs,tabularx,longtable,array}
+\usepackage{ragged2e,enumitem,titling,titlesec,fancyhdr,tocloft}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,backgrounds}
+\usepackage[most]{tcolorbox}
+\usepackage{listings,upquote,xurl,hyperref}
+\usepackage{float,caption,placeins,microtype,needspace}
+\usepackage[a4paper,left=22mm,right=22mm,top=22mm,bottom=25mm,headheight=16pt]{geometry}
+\definecolor{aivnGreen}{RGB}{52,79,30}
+\definecolor{aivnCodeOutputColor}{RGB}{11,83,148}
+\definecolor{brandIndigo}{HTML}{333D91}
+\definecolor{rowLavender}{HTML}{EEECFA}
+\setlength{\parskip}{0.3em}
+\setlength{\emergencystretch}{2em}
+\widowpenalty=10000
+\clubpenalty=10000
+\displaywidowpenalty=10000
+\setlength{\textfloatsep}{12pt plus 2pt minus 2pt}
+\setlength{\intextsep}{12pt plus 2pt minus 2pt}
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.65}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\setlist[itemize]{leftmargin=1.5em,itemsep=2pt,topsep=3pt}
+\setlist[enumerate]{leftmargin=1.8em,itemsep=3pt,topsep=3pt}
+\renewcommand{\thesection}{\Roman{section}.}
+\renewcommand{\thesubsection}{\thesection\arabic{subsection}.}
+\renewcommand{\thesubsubsection}{\thesubsection\arabic{subsubsection}.}
+\titleformat{\section}{\normalfont\fontsize{16pt}{20pt}\selectfont\bfseries}{\thesection}{0.85em}{}
+\titleformat{\subsection}{\normalfont\fontsize{14pt}{17pt}\selectfont\bfseries}{\thesubsection}{0.75em}{}
+\titleformat{\subsubsection}{\normalfont\fontsize{12pt}{15pt}\selectfont\bfseries}{\thesubsubsection}{0.65em}{}
+\titlespacing*{\section}{0pt}{1.25em}{0.65em}
+\titlespacing*{\subsection}{0pt}{1em}{0.45em}
+\titlespacing*{\subsubsection}{0pt}{0.85em}{0.35em}
+\renewcommand{\cfttoctitlefont}{\Large\bfseries}
+\renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
+\setlength{\cftsecnumwidth}{3em}
+\setlength{\cftsubsecnumwidth}{4em}
+\setcounter{tocdepth}{2}
+\renewcommand{\cftsecfont}{\small\bfseries}
+\renewcommand{\cftsecpagefont}{\small\bfseries}
+\renewcommand{\cftsubsecfont}{\small}
+\renewcommand{\cftsubsecpagefont}{\small}
+\setlength{\cftbeforesecskip}{6pt}
+\setlength{\cftbeforesubsecskip}{2pt}
+\hypersetup{colorlinks=true,linkcolor=black,urlcolor=blue!60!black,citecolor=aivnGreen,pdfpagemode=UseNone}
+\urlstyle{same}
+\newtcolorbox{infobox}[1]{enhanced,breakable,colback=green!3,colframe=green!3,
+  borderline west={3pt}{0pt}{aivnGreen},arc=4pt,colbacktitle=aivnGreen,
+  coltitle=white,fonttitle=\bfseries,title={#1},before skip=10pt,after skip=10pt}
+\newtcolorbox{examplebox}[1]{enhanced,breakable,colback=brandIndigo!5,colframe=brandIndigo!5,
+  borderline west={3pt}{0pt}{brandIndigo},arc=4pt,colbacktitle=brandIndigo,
+  coltitle=white,fonttitle=\bfseries,title={#1},before skip=10pt,after skip=10pt}
+\newtcolorbox{notebox}{enhanced,breakable,colback=yellow!8,colframe=orange!70!black,
+  arc=4pt,fontupper=\small,fonttitle=\bfseries,title={Lưu ý},before skip=10pt,after skip=10pt}
+\newtcolorbox{guidelinebox}[1]{enhanced,breakable,colback=yellow!8,colframe=orange!70!black,
+  arc=4pt,fonttitle=\bfseries,title={#1},before skip=10pt,after skip=10pt}
+\newtcolorbox{figurecardcaptionaivn}{colback=aivnGreen,colframe=aivnGreen,
+  boxrule=0pt,arc=2pt,left=8pt,right=8pt,top=3pt,bottom=3pt,
+  fontupper=\small\color{white},halign=left,
+  before upper={\hypersetup{urlcolor=white}}}
+\newtcolorbox{captionbelowboxaivn}{colback=aivnGreen,colframe=aivnGreen,
+  boxrule=0pt,arc=3pt,fontupper=\small\color{white},halign=center}
+\newcounter{hinh}
+\newcommand{\capfig}[1]{\refstepcounter{hinh}Hình~\thehinh: #1}
+\lstdefinestyle{aivncode}{basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{blue!65!black},commentstyle=\color{ForestGreen},
+  stringstyle=\color{red!65!black},numbers=left,numberstyle=\tiny\color{gray},
+  numbersep=7pt,breaklines=true,breakatwhitespace=false,columns=fullflexible,
+  keepspaces=true,showstringspaces=false,upquote=true,tabsize=2}
+\tcbset{aivncode/.style={enhanced,breakable=false,listing only,listing engine=listings,
+  colback=gray!5,colframe=aivnGreen,colbacktitle=aivnGreen,coltitle=white,
+  fonttitle=\small\bfseries,arc=3pt,boxrule=0.6pt,left=17pt,right=5pt,
+  top=5pt,bottom=5pt,before skip=9pt,after skip=9pt}}
+\newtcblisting{aivncodebox}[2][]{aivncode,title={#2},listing options={style=aivncode,#1}}
+\newcommand{\codefile}[3][]{\tcbinputlisting{aivncode,title={#2},listing file={#3},listing options={style=aivncode,#1}}}
+\newtcblisting{aivnCodeOutput}[1]{aivncode,colframe=aivnCodeOutputColor,
+  colbacktitle=aivnCodeOutputColor,title={#1},listing options={style=aivncode,numbers=none}}
+\setlength{\droptitle}{-5em}
+\newcommand{\TitleRule}{\rule{0.90\textwidth}{0.6pt}}
+\newlength{\TitleBlockHeight}
+\setlength{\TitleBlockHeight}{2.2cm}
+\pretitle{\begin{center}\includegraphics[height=2cm]{Figures/aio2026_logo.pdf}\par\vspace{0.4em}\TitleRule\par\nointerlineskip}
+\posttitle{\par\nointerlineskip\TitleRule\end{center}}
+\preauthor{\begin{center}\small}
+\author{Bài đọc nền tảng --- Kỹ thuật dữ liệu}
+\postauthor{\par\end{center}}
+\date{}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\href{https://www.facebook.com/aivietnam.edu.vn}{\textcolor{aivnGreen}{\bfseries AI VIET NAM (AIO2026)}}}
+\rhead{\href{https://aivietnam.edu.vn/}{\textcolor{aivnGreen}{\bfseries aivietnam.edu.vn}}}
+\fancyfoot[r]{\textcolor{aivnGreen}{\bfseries Trang \thepage}}
+\fancyfoot[l]{\href{https://zalo.me/84911118758}{\textcolor{aivnGreen}{\small\bfseries SĐT/Zalo: 0911118758 (Dr. Hồng Phúc)}}}
+\renewcommand{\headrulewidth}{1pt}
+\renewcommand{\footrulewidth}{1pt}
+\renewcommand{\headrule}{{\color{aivnGreen}\hrule width\headwidth height\headrulewidth\vskip-\headrulewidth}}
+\renewcommand{\footrule}{{\color{aivnGreen}\hrule width\headwidth height\footrulewidth\vskip-\footrulewidth}}
+\fancypagestyle{firstpage}{\fancyhead{}\renewcommand{\headrulewidth}{0pt}}
+\fancypagestyle{plain}{\fancyhead{}\renewcommand{\headrulewidth}{0pt}}
+\raggedbottom
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\tikzset{aivnnode/.style={draw=aivnGreen,fill=green!3,rounded corners=3pt,
+  align=center,font=\small,inner sep=7pt},aivnarrow/.style={-{Latex[length=2.5mm]},thick,draw=aivnGreen}}
+% Lab handout overrides: Arabic section numbers match the cross-references in the Markdown lab.
+\renewcommand{\thesection}{\arabic{section}.}
+\renewcommand{\thesubsection}{\arabic{section}.\arabic{subsection}.}
+\setcounter{tocdepth}{1}
+\author{Hướng dẫn thực hành --- Kỹ thuật dữ liệu}
+\newtcolorbox{questionbox}[1]{enhanced,breakable,colback=brandIndigo!5,colframe=brandIndigo!5,
+  borderline west={3pt}{0pt}{brandIndigo},arc=4pt,fontupper=\small,
+  before skip=8pt,after skip=8pt,title={#1},colbacktitle=brandIndigo!5,coltitle=brandIndigo,
+  fonttitle=\small\bfseries,attach title to upper={\ }}
+\newtcolorbox{evidencebox}{enhanced,breakable,colback=green!3,colframe=green!3,
+  borderline west={3pt}{0pt}{aivnGreen},arc=4pt,fontupper=\small,before skip=6pt,after skip=6pt}

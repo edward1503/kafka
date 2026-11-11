@@ -1,0 +1,49 @@
+# Phần mở rộng của lab Kafka: cluster 3 node (KRaft, mỗi node vừa là broker vừa là controller).
+# Chỉ dùng cho học tập trên máy cá nhân: không mở cổng ra host, không bật bảo mật.
+# Khởi động:  docker compose -f kafka/lab/docker-compose.replication.yml up -d
+# Dọn dẹp:    docker compose -f kafka/lab/docker-compose.replication.yml down -v
+name: kafka-replication-lab
+
+x-kafka-common: &kafka-common
+  image: apache/kafka:4.1.2
+  restart: "no"
+
+x-kafka-env: &kafka-env
+  CLUSTER_ID: "4L6g3nShT-eMCtK--X86sw"
+  KAFKA_PROCESS_ROLES: "broker,controller"
+  KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+  KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+  KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+  KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
+  KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka-1:9093,2@kafka-2:9093,3@kafka-3:9093"
+  KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "3"
+  KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "2"
+  KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: "0"
+  KAFKA_HEAP_OPTS: "-Xms384m -Xmx512m"
+
+services:
+  kafka-1:
+    <<: *kafka-common
+    container_name: kafka-1
+    hostname: kafka-1
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "1"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-1:9092"
+  kafka-2:
+    <<: *kafka-common
+    container_name: kafka-2
+    hostname: kafka-2
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "2"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-2:9092"
+  kafka-3:
+    <<: *kafka-common
+    container_name: kafka-3
+    hostname: kafka-3
+    environment:
+      <<: *kafka-env
+      KAFKA_NODE_ID: "3"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka-3:9092"
