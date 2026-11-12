@@ -26,6 +26,9 @@ IMAGES = os.path.join(KAFKA, "assets", "images")
 OUTPUT = os.path.join(WORKSPACE, "output", "kafka-architecture-slides.pptx")
 
 
+LAB_URL = "https://github.com/edward1503/kafka/blob/main/kafka/kafka-architecture-hands-on.md"
+
+
 def IMG(name):
     return os.path.join(IMAGES, name)
 
@@ -50,7 +53,8 @@ def build(template, out):
         "AI VIET NAM – AIO2026",
         "Buổi học khoảng 60 phút lý thuyết, sau đó là lab 90 phút. Nói rõ ngay từ đầu: mọi con số "
         "“Từ lab” trong slide là output thật của lượt chạy kiểm chứng ngày 10/11/2026 trên apache/kafka:4.1.2, "
-        "không phải số minh họa. Thay nút Data&Code bằng đường dẫn tài liệu của buổi học.",
+        "không phải số minh họa. Nút Data&Code dẫn tới hướng dẫn lab trên GitHub.",
+        code_url=LAB_URL,
     )
 
     # 2 ------------------------------------------------------------------ goals

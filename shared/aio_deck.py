@@ -340,11 +340,19 @@ class Deck:
     def notes(self, slide, text):
         slide.notes_slide.notes_text_frame.text = text
 
-    def title_slide(self, title, subtitle, author, note):
+    def title_slide(self, title, subtitle, author, note, code_url=None):
+        """code_url: target of the template's "Data&Code" button (lab or repository link)."""
         s = clone_slide(self.prs, self.proto_title)
         set_text_keep_format(shape_by_name(s, "Google Shape;92;p1"), title)
         set_text_keep_format(shape_by_name(s, "Google Shape;93;p1"), subtitle)
         set_text_keep_format(shape_by_name(s, "Google Shape;95;p1"), author)
+        if code_url:
+            run = shape_by_name(s, "Google Shape;94;p1").text_frame.paragraphs[0].runs[0]
+            hlink = run._r.find(qn("a:rPr") + "/" + qn("a:hlinkClick"))
+            old_rid = hlink.get(qn("r:id")) if hlink is not None else None
+            hlink.set(qn("r:id"), s.part.relate_to(code_url, RT.HYPERLINK, is_external=True))
+            if old_rid:
+                s.part.drop_rel(old_rid)  # the template's sample Drive link
         self.notes(s, note)
         return s
 
